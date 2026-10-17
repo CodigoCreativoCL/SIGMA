@@ -428,19 +428,14 @@ html.sigma-dialog-locked body {
 }
 
 /* ============================================================================
-   DRAWER (17-10-2026)
-   Toda ficha que abre SigmaModal.open sale como panel lateral derecho, igual que
-   los Centros (Mantenimiento, Comercial, Indicadores): cabecera blanca sin
-   degradado, tinta oscura, morado para la marca, turquesa para el foco.
+   DRAWER (17-10-2026) — idéntico al panel lateral de los Centros (.cp-pnl de sigma-centro-planificacion.css)
+   Scrim rgba(11,15,26,.32), panel blanco de 520 px (760 px las fichas anchas), sombra -20px 0 50px, cabecera con
+   título 17 px / peso 800 y un solo botón de cierre de 32 px, borde #E6EAF1, entrada deslizando 30 px.
    ============================================================================ */
-.sigma-dialog--drawer {
-    --sigma-dialog-width: 640px;
-    display: block;
-    padding: 0;
-}
+.sigma-dialog--drawer { --sigma-dialog-width: 520px; display: block; padding: 0; }
 
 .sigma-dialog--drawer .sigma-dialog__backdrop {
-    background: rgba(23, 34, 59, .42);
+    background: rgba(11, 15, 26, .32);
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
 }
@@ -454,51 +449,58 @@ html.sigma-dialog-locked body {
     height: 100dvh;
     max-height: none;
     border: 0;
-    border-left: 1px solid #e2e7f0;
     border-radius: 0;
-    box-shadow: -18px 0 48px rgba(23, 34, 59, .20);
-    opacity: 1;
-    transform: translateX(100%);
-    transition: transform .24s cubic-bezier(.2, .8, .2, 1), width .2s ease;
+    background: #fff;
+    box-shadow: -20px 0 50px rgba(15, 23, 42, .18);
+    opacity: 0;
+    transform: translateX(30px);
+    transition: transform .22s ease-out, opacity .22s ease-out;
 }
 
-.sigma-dialog--drawer.is-open .sigma-dialog__surface { transform: translateX(0); }
-.sigma-dialog--drawer.is-closing .sigma-dialog__surface { transform: translateX(100%); }
+.sigma-dialog--drawer.is-open .sigma-dialog__surface { opacity: 1; transform: none; }
+.sigma-dialog--drawer.is-closing .sigma-dialog__surface { opacity: 0; transform: translateX(30px); }
 .sigma-dialog--drawer.is-closing .sigma-dialog__backdrop { opacity: 0; }
 
 .sigma-dialog--drawer .sigma-dialog__bar {
-    height: 60px;
-    min-height: 60px;
-    flex-basis: 60px;
-    padding: 0 12px 0 20px;
-    border-bottom: 1px solid #e2e7f0;
+    height: auto;
+    min-height: 0;
+    flex: 0 0 auto;
+    align-items: flex-start;
+    padding: 18px 20px 14px;
+    border-bottom: 1px solid #e6eaf1;
     background: #fff;
     cursor: default;
 }
 
-.sigma-dialog--drawer .sigma-dialog__mark { width: 26px; height: 30px; flex-basis: 26px; filter: none; }
-.sigma-dialog--drawer .sigma-dialog__eyebrow { color: #6732f4; }
-.sigma-dialog--drawer .sigma-dialog__title { color: #17223b; font-size: 15px; font-weight: 800; }
-.sigma-dialog--drawer .sigma-dialog__record-id { border-color: #e2e7f0; color: #6732f4; background: #f2efff; }
+.sigma-dialog--drawer .sigma-dialog__mark { display: none; }
+.sigma-dialog--drawer .sigma-dialog__identity { flex: 1; min-width: 0; }
+.sigma-dialog--drawer .sigma-dialog__heading { display: flex; flex-direction: column-reverse; min-width: 0; }
+.sigma-dialog--drawer .sigma-dialog__eyebrow { display: none; }
+.sigma-dialog--drawer .sigma-dialog__title { max-width: none; color: #17223b; font-size: 17px; line-height: 1.3; font-weight: 800; }
+.sigma-dialog--drawer .sigma-dialog__record-id { border: 0; color: #68738a; background: #f1f4f9; font-size: 11px; font-weight: 700; letter-spacing: 0; }
 
-.sigma-dialog--drawer .sigma-dialog__controls button { border-radius: 9px; color: #68738a; }
-.sigma-dialog--drawer .sigma-dialog__controls button:hover { color: #6732f4; border-color: transparent; background: #f2efff; transform: none; }
+.sigma-dialog--drawer .sigma-dialog__controls button {
+    width: 32px;
+    height: 32px;
+    flex-basis: 32px;
+    border: 0;
+    border-radius: 9px;
+    color: #68738a;
+}
+.sigma-dialog--drawer .sigma-dialog__controls button:hover { color: #17223b; background: #eef1f6; transform: none; }
 .sigma-dialog--drawer .sigma-dialog__controls button:focus-visible { outline: 3px solid rgba(22, 198, 201, .27); outline-offset: 1px; }
 .sigma-dialog--drawer .sigma-dialog__controls [data-sigma-dialog-action="minimize"],
+.sigma-dialog--drawer .sigma-dialog__controls [data-sigma-dialog-action="maximize"],
 .sigma-dialog--drawer .sigma-dialog__controls [data-sigma-dialog-action="popout"] { display: none; }
 
-.sigma-dialog--drawer .sigma-dialog__viewport { flex: 1 1 auto; background: #f4f6fa; }
-.sigma-dialog--drawer .sigma-dialog__frame { height: 100% !important; max-height: none; background: #f4f6fa; }
-.sigma-dialog--drawer .sigma-dialog__loading { background: #f4f6fa; }
-.sigma-dialog--drawer .sigma-dialog__loading-brand { background: #fff; box-shadow: 0 8px 24px rgba(23, 34, 59, .10); -webkit-backdrop-filter: none; backdrop-filter: none; }
+.sigma-dialog--drawer .sigma-dialog__viewport { flex: 1 1 auto; background: #fff; }
+.sigma-dialog--drawer .sigma-dialog__frame { height: 100% !important; max-height: none; background: #fff; }
+.sigma-dialog--drawer .sigma-dialog__loading { background: #fff; }
+.sigma-dialog--drawer .sigma-dialog__loading-brand { background: #fff; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
 .sigma-dialog--drawer .sigma-dialog__particle { display: none; }
 
-/* «Maximizar» en un drawer = ancho completo. */
-.sigma-dialog--drawer.is-maximized { padding: 0; }
-.sigma-dialog--drawer.is-maximized .sigma-dialog__surface { width: 100vw; height: 100dvh; border-radius: 0; }
-
-/* Un segundo drawer abierto encima: el primero queda como pestaña en el borde inferior (comportamiento previo). */
 .sigma-dialog--drawer.is-minimized { display: block; }
+.sigma-dialog--drawer.is-minimized .sigma-dialog__surface { top: auto; opacity: 1; transform: none; border-radius: 15px; }
 
 @media (max-width: 680px) {
     .sigma-dialog--drawer .sigma-dialog__surface { width: 100vw; }
@@ -507,4 +509,3 @@ html.sigma-dialog-locked body {
 @media (prefers-reduced-motion: reduce) {
     .sigma-dialog--drawer .sigma-dialog__surface { transition: none; }
 }
-.sigma-dialog--drawer.is-minimized .sigma-dialog__surface { top: auto; transform: none; border-left: 1px solid rgba(255, 255, 255, .68); border-radius: 15px; }

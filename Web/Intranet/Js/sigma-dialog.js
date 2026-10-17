@@ -268,7 +268,7 @@
         if (root.classList.contains('is-maximized') || root.classList.contains('is-minimized')) return;
         var maxWidth = Math.max(320, window.innerWidth - (window.innerWidth <= 680 ? 0 : 20));
         if (DRAWER) {
-            surface.style.setProperty('--sigma-dialog-width', clamp(Math.round(current.width * .78), 460, Math.min(860, maxWidth)) + 'px');
+            surface.style.setProperty('--sigma-dialog-width', (current.width >= 900 ? 760 : current.width >= 640 ? 600 : 520) + 'px');
             return;
         }
         surface.style.setProperty('--sigma-dialog-width', clamp(current.width, 320, maxWidth) + 'px');

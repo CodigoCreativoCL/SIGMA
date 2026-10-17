@@ -70,7 +70,7 @@
     <link href="../Css/UI/WebControls/CheckBox.css?vrs=1" rel="stylesheet" />
 
     <!-- SweetAlert CSS -->
-    <link href="../Css/LookAndFeel/sigma-dialog.css?vrs=9" rel="stylesheet" />
+    <link href="../Css/LookAndFeel/sigma-dialog.css?vrs=10" rel="stylesheet" />
     <link href="../Css/LookAndFeel/sigma-aviso.css?vrs=1" rel="stylesheet" />
     <link href="../Css/SweetAlert/sweetalert.css?vrs=2" rel="stylesheet" />
     <link href="../Css/SweetAlert/sweetalert2.min.css?vrs=2" rel="stylesheet" />
@@ -143,7 +143,7 @@
                              masiva de usuarios lo hace—, y el componente soporta
                              instancias anidadas. Sin esto, esa llamada revienta con
                              "SigmaModal is not defined". --%>
-                        <asp:ScriptReference Path="~/Js/sigma-dialog.js?vrs=4" />
+                        <asp:ScriptReference Path="~/Js/sigma-dialog.js?vrs=5" />
                         <asp:ScriptReference Path="~/Js/sigma-aviso.js?vrs=1" />
                         <%-- GSAP va ANTES del calendario: el componente
                              comprueba `window.gsap` y si no esta, se abre sin
