@@ -72,7 +72,7 @@
     <!-- SweetAlert CSS -->
     <link href="../Css/LookAndFeel/sigma-drawer.css?vrs=3" rel="stylesheet" />
     <link href="../Css/LookAndFeel/sigma-aviso.css?vrs=2" rel="stylesheet" />
-    <link href="../Css/LookAndFeel/sigma-grilla.css?vrs=2" rel="stylesheet" />
+    <link href="../Css/LookAndFeel/sigma-grilla.css?vrs=3" rel="stylesheet" />
     <link href="../Css/LookAndFeel/sigma-combo.css?vrs=1" rel="stylesheet" />
     <link href="../Css/LookAndFeel/sigma-drawer-ficha.css?vrs=2" rel="stylesheet" />
     <%-- Dentro del drawer la ficha toma el diseño de los drawers de rediseño desde el primer pintado. --%>

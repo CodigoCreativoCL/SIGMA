@@ -13,7 +13,7 @@
 .RadGrid {
     border: 0 !important;
     background: transparent !important;
-    font-family: Sora, "Segoe UI", system-ui, sans-serif !important;
+    font-family: inherit !important;
 }
 
 .RadGrid .rgMasterTable {
@@ -26,13 +26,13 @@
 /* ---- cabecera ---- */
 .RadGrid .rgHeader,
 .RadGrid th.rgHeader {
-    padding: 4px 12px !important;
+    padding: 6px 14px 10px !important;
     border: 0 !important;
     background: transparent !important;
     color: #68738a !important;
     font-size: 11px !important;
     font-weight: 800 !important;
-    letter-spacing: .06em;
+    letter-spacing: .08em;
     text-transform: uppercase;
     white-space: nowrap;
     text-align: left !important;
@@ -43,7 +43,7 @@
 /* ---- filas = tarjetas ---- */
 .RadGrid .rgRow > td,
 .RadGrid .rgAltRow > td {
-    padding: 11px 12px !important;
+    padding: 12px 14px !important;
     border: 0 !important;
     border-top: 1px solid #e2e7f0 !important;
     border-bottom: 1px solid #e2e7f0 !important;
@@ -58,9 +58,7 @@
 .RadGrid .rgAltRow > td:last-child { border-right: 1px solid #e2e7f0 !important; border-radius: 0 12px 12px 0; }
 
 .RadGrid .rgRow:hover > td,
-.RadGrid .rgAltRow:hover > td { background: #f8f9fc !important; }
-.RadGrid .rgRow:hover,
-.RadGrid .rgAltRow:hover { box-shadow: 0 6px 16px rgba(23, 34, 59, .07); }
+.RadGrid .rgAltRow:hover > td { border-color: #c9cfdc !important; background: #fff !important; }
 
 .RadGrid .rgSelectedRow > td { background: #f2efff !important; border-color: #d9d0ff !important; }
 .RadGrid .rgSelectedRow > td:first-child { box-shadow: inset 4px 0 0 #6732f4; }
@@ -76,31 +74,42 @@
 .RadGrid .rgCommandTable { border: 0 !important; background: transparent !important; padding: 0 !important; }
 .RadGrid .rgCommandCell > div { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0 0 6px !important; }
 
-/* Botones: la hoja de componentes del Centro Comercial: 40 px, radio 10, 13 px peso 700; el color lo da la función. */
+/* Botones = .cp-btn de los Centros: 40 px, radio 11, borde 1 px, 13 px peso 700. */
 .RadGrid [class*="icono_"] {
     display: inline-flex !important;
     align-items: center;
+    gap: 8px;
+    height: 40px !important;
     min-height: 40px !important;
-    padding: 0 18px 0 36px !important;
-    border: 1.5px solid transparent !important;
-    border-radius: 10px !important;
-    font: 700 13px/1 Sora, "Segoe UI", system-ui, sans-serif !important;
+    padding: 0 16px 0 36px !important;
+    border: 1px solid transparent !important;
+    border-radius: 11px !important;
+    font-family: inherit !important;
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    line-height: 1 !important;
+    white-space: nowrap;
     text-decoration: none !important;
     background-color: #6732f4 !important;
     color: #fff !important;
+    box-shadow: 0 6px 16px rgba(103, 50, 244, .25) !important;
+    transition: background-color .15s, transform .1s, box-shadow .15s;
     cursor: pointer;
 }
+.RadGrid [class*="icono_"]:active { transform: translateY(1px); }
 .RadGrid [class*="icono_"]:hover { background-color: #4820c9 !important; color: #fff !important; }
-/* Contorno (azul): abrir, navegar, exportar */
+/* .cp-out: abrir, exportar, cargar */
 .RadGrid .icono_imprimir,
 .RadGrid .icono_descargar_excel,
-.RadGrid .icono_carga_masiva { background-color: transparent !important; color: #0565c2 !important; border-color: #087bea !important; }
+.RadGrid .icono_excel,
+.RadGrid .icono_carga_masiva { background-color: #fff !important; color: #087bea !important; border-color: #087bea !important; box-shadow: none !important; }
 .RadGrid .icono_imprimir:hover,
 .RadGrid .icono_descargar_excel:hover,
-.RadGrid .icono_carga_masiva:hover { background-color: #eaf4ff !important; color: #0565c2 !important; }
-/* Destructivo: contorno rojo (el rojo solo para eliminar) */
-.RadGrid .icono_eliminar { background-color: transparent !important; color: #a92c23 !important; border-color: #c7352b !important; }
-.RadGrid .icono_eliminar:hover { background-color: #fdedeb !important; color: #a92c23 !important; }
+.RadGrid .icono_excel:hover,
+.RadGrid .icono_carga_masiva:hover { background-color: #eaf4ff !important; color: #087bea !important; }
+/* destructivo: mismo botón, en rojo */
+.RadGrid .icono_eliminar { background-color: #fff !important; color: #c7352b !important; border-color: #c7352b !important; box-shadow: none !important; }
+.RadGrid .icono_eliminar:hover { background-color: #fdecea !important; color: #c7352b !important; }
 .RadGrid [class*="icono_"]:focus-visible { outline: 3px solid rgba(22, 198, 201, .27); outline-offset: 1px; }
 .RadGrid [class*="icono_"][disabled],
 .RadGrid [class*="icono_"].aspNetDisabled { opacity: .42; cursor: not-allowed; }
@@ -114,11 +123,11 @@
 .sg-chip.is-bl { background: #eaf4ff; color: #0565c2; }
 
 /* ---- buscador de la lista (sigma-grilla.js) ---- */
-.sg-gr-bar { display: flex; align-items: center; gap: 12px; margin: 0 0 8px; }
-.sg-gr-buscar { flex: 1 1 260px; max-width: 420px; display: flex; align-items: center; gap: 8px; height: 42px; padding: 0 12px; border: 1px solid #cfd6e3; border-radius: 9px; background: #fff; color: #68738a; }
-.sg-gr-buscar:focus-within { border-color: #007f8a; outline: 3px solid rgba(22, 198, 201, .27); }
+.sg-gr-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 0 0 14px; }
+.sg-gr-buscar { flex: 1 1 320px; max-width: 520px; display: flex; align-items: center; gap: 10px; height: 42px; padding: 0 14px; border: 0; border-radius: 10px; background: #f3f5f8; color: #68738a; }
+.sg-gr-buscar:focus-within { outline: 3px solid rgba(22, 198, 201, .27); }
 .sg-gr-buscar svg { width: 17px; height: 17px; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
-.sg-gr-buscar input { flex: 1; min-width: 0; border: 0 !important; outline: 0 !important; box-shadow: none !important; background: transparent !important; font-size: 13px; color: #17223b; height: auto; padding: 0 !important; }
+.sg-gr-buscar input { flex: 1; min-width: 0; border: 0 !important; outline: 0 !important; box-shadow: none !important; background: transparent !important; font-size: 14px; color: #17223b; height: 40px; padding: 0 !important; }
 .sg-gr-n { color: #68738a; font-size: 12px; font-weight: 700; white-space: nowrap; }
 
 /* ---- paginador ---- */

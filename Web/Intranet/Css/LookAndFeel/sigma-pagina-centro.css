@@ -52,8 +52,8 @@ html:not(.sgx-page) body:has(.RadGrid):not(:has(.cp-root, .cc-root, .sgai, .sgin
     margin-left: 0;
     margin-right: 0;
     padding: 16px 18px;
-    border: 0;
-    border-radius: 20px;
+    border: 1px solid #E2E7F0;
+    border-radius: 16px;
     background: #FFFFFF;
     box-shadow: var(--sgp-e1);
 }
