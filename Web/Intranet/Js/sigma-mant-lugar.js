@@ -19,7 +19,8 @@
   var TABI = {
     hoy: ['clock', 'El día: agenda, atención y riesgo'], monitoreo: ['monitor', 'Áreas en mantención ahora'], ejecuciones: ['layers', 'Todo lo programado, en una lista'], cumplimiento: ['trend', 'Qué se hizo de lo planificado'],
     ordenes: ['wrench', 'Órdenes de trabajo y su ficha'], avisos: ['bell', 'Fallas, hallazgos y alertas por tratar'],
-    procedimientos: ['book', 'Pasos estándar de cada trabajo'], pautas: ['clip', 'Listas de verificación'], calendarios: ['calw', 'Frecuencias que se comparten'], ajustes: ['cog', 'Catálogos y jornada']
+    procedimientos: ['book', 'Pasos estándar de cada trabajo'], pautas: ['clip', 'Listas de verificación'], calendarios: ['calw', 'Frecuencias que se comparten'], ajustes: ['cog', 'Catálogos y jornada'],
+    tablero: ['gauge', 'Cómo va el mantenimiento'], evaluar: ['check', 'Qué pasó con lo que se predijo'], desempeno: ['trend', 'Cómo rinde cada versión'], costos: ['layers', 'Repuestos, mano de obra y servicios']
   };
   function hashTab() { var h = String(location.hash || '').replace(/^#/, '').split('&')[0]; return CFG.tabs.some(function (t) { return t.k === h; }) ? h : CFG.tabs[0].k; }
   function pintarTabs() {

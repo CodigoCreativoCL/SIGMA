@@ -1,0 +1,29 @@
+﻿/* Indicadores de gestión (EP-18, BD/474). Hereda los tokens de .cp-root (Centro de Planificación). */
+.cp-root .ix-bar { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px 14px; margin: 14px 0; padding: 12px 14px; background: #fff; border: 1px solid var(--line, #E2E7F0); border-radius: 14px; }
+.cp-root .ix-bar .ix-f { display: flex; flex-direction: column; gap: 4px; font-size: 11px; font-weight: 800; color: #4A556D; min-width: 150px; }
+.cp-root .ix-bar .ix-f .cp-fecha input { color: var(--ink, #17223B); background: #fff; border: 1px solid #CFD6E3; border-radius: 9px; padding: 8px 10px; width: 140px; font-weight: 600; }
+.cp-root .ix-bar .ix-f .sg-combo { min-width: 190px; }
+.cp-root .ix-pre { display: flex; gap: 6px; flex-wrap: wrap; align-items: flex-end; }
+.cp-root .ix-acc { margin-left: auto; display: flex; gap: 8px; }
+.cp-root .ix-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; margin-bottom: 14px; }
+.cp-root .ix-kpi { text-align: left; display: flex; flex-direction: column; gap: 4px; padding: 14px 16px; cursor: pointer; }
+.cp-root .ix-kpi > b { font-size: 30px; line-height: 1.1; color: var(--ink, #17223B); }
+.cp-root .ix-kpi > span { font-size: 12px; color: var(--muted, #68738A); }
+.cp-root .ix-kpi > em { font-style: normal; font-size: 12px; font-weight: 700; color: var(--sigma-blue, #087BEA); margin-top: 4px; display: inline-flex; align-items: center; gap: 2px; }
+.cp-root .ix-dl { font-size: 12px; font-weight: 700; color: var(--muted, #68738A); }
+.cp-root .ix-dl.ix-ok { color: #16855B; }
+.cp-root .ix-dl.ix-mal { color: #C7352B; }
+.cp-root .ix-dl.ix-nd { font-weight: 600; }
+.cp-root .ix-nota { margin: 0; padding-left: 18px; font-size: 13px; line-height: 1.55; color: #3B4663; }
+.cp-root .ix-cmps { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; margin-bottom: 8px; }
+.cp-root .ix-cmp { display: flex; flex-direction: column; gap: 4px; padding: 14px 16px; }
+.cp-root .ix-cmp > b { font-size: 24px; color: var(--ink, #17223B); }
+.cp-root .ix-cmp > em { font-style: normal; font-size: 12px; color: var(--muted, #68738A); }
+.cp-root .ix-pie { display: none; }
+@media print {
+  .cp-root .ix-pie { display: block; font-size: 12px; margin: 0 0 10px; padding-bottom: 6px; border-bottom: 1px solid #999; }
+  .cp-root .cp-hero, .cp-root .cp-mtabs, .cp-root .ix-bar, .cp-root .ix-kpi > em, .cp-root #cpLayer, .cp-root .cp-toasts { display: none !important; }
+  .cp-root .ix-kpi, .cp-root .cp-card { break-inside: avoid; box-shadow: none; }
+  .cp-root .ix-row { grid-template-columns: repeat(3, 1fr); }
+  body, .cp-root { background: #fff !important; }
+}

@@ -1,0 +1,11 @@
+﻿/* SIGMA AI · Desempeño (EP-17, BD/475): opciones de «¿ocurrió?» y casilla de intervención del cajón. */
+.cp-root .cp-opts { display: flex; gap: 8px; margin-top: 4px; }
+.cp-root .cp-opt { flex: 1; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 10px 12px; text-align: left; background: #fff; border: 1px solid #CFD6E3; border-radius: 10px; cursor: pointer; color: var(--ink, #17223B); }
+.cp-root .cp-opt b { font-size: 13px; }
+.cp-root .cp-opt small { font-size: 11px; color: var(--muted, #68738A); }
+.cp-root .cp-opt:hover { border-color: var(--sigma-purple, #6732F4); }
+.cp-root .cp-opt.on { border-color: var(--sigma-purple, #6732F4); background: var(--sigma-purple-soft, #F2EFFF); box-shadow: 0 0 0 2px rgba(103, 50, 244, .15); }
+.cp-root .cp-chk { display: grid; grid-template-columns: 20px 1fr; gap: 8px; align-items: start; font-size: 13px; margin: 12px 0; }
+.cp-root .cp-chk input { margin-top: 3px; }
+.cp-root .cp-note { background: var(--sigma-cyan-soft, #E8FBFB); border-radius: 10px; padding: 10px 12px; font-size: 13px; }
+.cp-root .cp-err-t { color: var(--danger, #C7352B); font-weight: 700; font-size: 13px; }

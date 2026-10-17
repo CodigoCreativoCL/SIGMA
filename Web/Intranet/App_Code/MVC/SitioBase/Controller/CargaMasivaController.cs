@@ -702,6 +702,23 @@ namespace SitioBase.Controller
                                     (l.avisos.Count > 0 ? " " + string.Join(" ", l.avisos.Take(3)) : ""));
 
             int id = Crear(cliente, usuario, mod.clave, archivoNombre, modo, existentes);
+            // HU-200 · escenario 2: la huella del archivo avisa si esta planilla ya se procesó antes (no lo impide).
+            try
+            {
+                string huella;
+                using (System.Security.Cryptography.SHA256 sha = System.Security.Cryptography.SHA256.Create())
+                    huella = BitConverter.ToString(sha.ComputeHash(archivo)).Replace("-", "").ToLowerInvariant();
+                DataTable rep = Exec("SEL_CARGA_MASIVA_REPETIDA", "@CLIENTE", cliente, "@MODULO", mod.clave, "@HASH", huella, "@EXCEPTO", id);
+                Exec("UPD_CARGA_MASIVA_HASH", "@CLIENTE", cliente, "@ID", id, "@HASH", huella);
+                if (rep != null && rep.Rows.Count > 0)
+                {
+                    DataRow p = rep.Rows[0];
+                    string cuando = Convert.ToDateTime(p["FECHA"]).ToString("dd-MM-yyyy HH:mm", CultureInfo.InvariantCulture);
+                    l.avisos.Insert(0, "Esta planilla ya se procesó el " + cuando + (Convert.ToString(p["USUARIO"]) != "" ? " (" + Convert.ToString(p["USUARIO"]) + ")" : "") +
+                                       " como " + (Convert.ToString(p["MODO"]) == "CARGAR" ? "carga" : "revisión") + ". Volver a cargarla es seguro: no duplica.");
+                }
+            }
+            catch (Exception) { /* la huella es un aviso: si falla, la carga sigue */ }
             try
             {
                 foreach (DataRow r in l.filas.Rows) r["cmf_carga"] = id;
