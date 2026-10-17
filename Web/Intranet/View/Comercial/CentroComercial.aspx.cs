@@ -24,6 +24,8 @@ public partial class View_Comercial_CentroComercial : System.Web.UI.Page
     {
         int lead;
         int.TryParse(Request.QueryString["lead"], out lead);
+        // La campana abre la ficha con ?query=<Id cifrado> (aviso «Nuevo lead», BD/477).
+        if (lead <= 0 && !string.IsNullOrEmpty(Request.QueryString["query"])) lead = SitioBase.Querystring.Entero(Request.QueryString["query"], "Id");
         string tab = (Request.QueryString["tab"] ?? "").ToLowerInvariant();
         if (tab != "pipeline" && tab != "clientes" && tab != "suscripciones") tab = "resumen";
         string sub = (Request.QueryString["sub"] ?? "").ToLowerInvariant();

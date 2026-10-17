@@ -157,10 +157,12 @@ function refrescarLead(f) {
 }
 
 /* ------------------------------------------------------------ cabecera y pestañas */
+/* Un ejecutivo en un combo: su foto (o iniciales) y su perfil, para distinguirlos de un vistazo. */
+function ejOpt(e) { return { id: String(e.ID), n: e.NOMBRE, sub: e.PERFIL || '', img: e.FOTO || '', ini: K.ini(e.NOMBRE) }; }
 /* El botón principal del encabezado cambia con la pestaña (prompt V2 §1):
    Resumen y Pipeline → «Nuevo lead»; Suscripciones → «Emitir período». */
 function pintarCabecera() {
-  var ejs = [{ id: '', n: 'Todos' }, { id: 'sin', n: 'Sin asignar' }].concat((S.ini.ejecutivos || []).map(function (e) { return { id: String(e.ID), n: e.NOMBRE }; }));
+  var ejs = [{ id: '', n: 'Todos' }, { id: 'sin', n: 'Sin asignar' }].concat((S.ini.ejecutivos || []).map(ejOpt));
   var leads = S.tab === 'resumen' || S.tab === 'pipeline';
   var extra = !leads && COB ? COB.boton() : null;
   $('#ccAcc').innerHTML = (leads ? '<span class="cc-hsel">Ejecutivo ' + K.combo('ccEjFiltro', ejs, S.ej, { ph: 'Todos', etiqueta: 'Filtrar por ejecutivo' }) + '</span>' : '') +
@@ -551,7 +553,7 @@ function secInfo(st, d) {
       '<div class="cp-fld"><span class="cp-lb">Interés</span>' + modChips(mods(f.INTERESES), 'intmod') + '</div>' +
       '<div class="cc-acc"><button type="button" class="cp-btn cp-ghost cp-sm" data-a="infox">Cancelar</button><span class="cc-sp"></span><button type="button" class="cp-btn cp-pri cp-sm" data-a="infook"' + (st.busy ? ' disabled' : '') + '>Guardar datos</button></div>';
   } else {
-    var ejs = (S.ini.ejecutivos || []).map(function (e) { return { id: String(e.ID), n: e.NOMBRE }; });
+    var ejs = (S.ini.ejecutivos || []).map(ejOpt);
     var dl = [['Empresa', esc(l.EMPRESA)], [l.IDENTIFICADOR_NOMBRE || 'RUT', (l.IDENTIFICADOR || l.RUT) ? esc(l.IDENTIFICADOR || l.RUT) : '<span class="cc-falta">Por completar · lo pide el contrato</span>'], ['Rubro', l.RUBRO ? esc(l.RUBRO) : '—'],
       ['Origen', (l.ORIGEN === 'FORM_WEB' ? 'Formulario web (inicio.aspx)' : 'Registrado a mano') + ' · ' + dmyh(l.FECHA_CREACION)]];
     if (l.N_ACTIVOS) dl.push(['Activos', esc(l.N_ACTIVOS)]);
@@ -886,7 +888,7 @@ function abrirNuevo() {
     var f = st.f, p = paisN(f.pais), usd = p.MONEDA === 'USD';
     var fld = function (k, t, o) { o = o || {}; return '<div class="cp-fld' + (o.full ? ' cc-full' : '') + '"><label for="nl_' + k + '">' + t + (o.req ? ' <span style="color:var(--cc-da)">*</span>' : '') + '</label><input class="cp-inp" id="nl_' + k + '" data-pv="n.' + k + '" value="' + esc(f[k]) + '"' + (o.af ? ' data-autofocus="1"' : '') + (o.ph ? ' placeholder="' + esc(o.ph) + '"' : '') + '></div>'; };
     var cmb = function (id, lista, v, t, ph) { return '<div class="cp-fld"><label>' + t + '</label>' + K.combo(id, lista, v, { ph: ph || 'Elige', etiqueta: t }) + '</div>'; };
-    var ejs = [{ id: '', n: 'Sin asignar' }].concat((S.ini.ejecutivos || []).map(function (e) { return { id: String(e.ID), n: e.NOMBRE }; }));
+    var ejs = [{ id: '', n: 'Sin asignar' }].concat((S.ini.ejecutivos || []).map(ejOpt));
     var dup = st.dup && st.dup.length ? '<div class="cc-info cc-wa">' + ic('flag') + '<span>El dominio de este correo ya está en <b>' + st.dup.slice(0, 3).map(function (x) { return esc(x.EMPRESA) + ' (' + esc(x.CODIGO || x.TIPO) + ')'; }).join(', ') + '</b>' + (st.dup.length > 3 ? ' y ' + (st.dup.length - 3) + ' más' : '') + '. Revisa que no sea un duplicado; si es otra persona de la misma empresa, puedes seguir.</span></div>' : '';
     var ok = f.empresa.trim().length >= 2 && f.contacto.trim().length >= 2 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.correo.trim());
     var b = '<div class="cc-grid2">' + fld('empresa', 'Empresa', { af: 1, req: 1 }) + fld('contacto', 'Contacto', { req: 1 }) + fld('correo', 'Correo', { req: 1 }) + fld('telefono', 'Teléfono') + fld('cargo', 'Cargo') + '</div>' + dup +

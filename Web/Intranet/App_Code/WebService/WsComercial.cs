@@ -46,6 +46,18 @@ public class WsComercial : System.Web.Services.WebService
     // LECTURAS
     // =====================================================================
 
+    /// <summary>Los ejecutivos comerciales (perfiles Gerente Comercial y Ejecutivo Comercial) con su foto y su perfil.</summary>
+    private static List<Dictionary<string, object>> Ejecutivos()
+    {
+        List<Dictionary<string, object>> l = SoporteDatos.Filas("SEL_LEAD_EJECUTIVOS");
+        foreach (Dictionary<string, object> f in l)
+        {
+            int foto = f["FOTO_ID"] == null ? 0 : Convert.ToInt32(f["FOTO_ID"]);
+            f["FOTO"] = foto > 0 ? SitioBase.UrlArchivo.Ver(foto) : "";
+        }
+        return l;
+    }
+
     /// <summary>Lo que la pantalla pide una vez: catálogo, ejecutivos, límites por defecto y permisos.</summary>
     [WebMethod(EnableSession = true)]
     [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
@@ -60,7 +72,7 @@ public class WsComercial : System.Web.Services.WebService
             {
                 planes = SoporteDatos.Del(cat, 0),
                 uf = uf != null && uf["UF"] != null ? uf["UF"] : null,
-                ejecutivos = SoporteDatos.Filas("SEL_LEAD_EJECUTIVOS"),
+                ejecutivos = Ejecutivos(),
                 paises = SoporteDatos.Filas("SEL_COBRO_PAISES"),
                 modulos = Comercial.MODULOS.Select(m => new { id = m[0], n = m[1] }).ToList(),
                 demo = new { dias = Entero(Comercial.Parametro("COMERCIAL_DEMO_DIAS", "7"), 7), limites = LimitesDemo() },
