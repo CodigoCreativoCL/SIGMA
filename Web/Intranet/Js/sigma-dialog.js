@@ -18,6 +18,8 @@
     var dragState;
     var instances = [];
     var instanceSequence = 0;
+    /* Desde el 17-10-2026 toda ficha se abre como DRAWER (panel lateral derecho), igual que los Centros: sin arrastre ni medición de alto. */
+    var DRAWER = true;
 
     function number(value, fallback) {
         var result = parseInt(value, 10);
@@ -43,7 +45,7 @@
         root = document.createElement('div');
         instanceSequence += 1;
         root.id = 'sigmaDialog_' + instanceSequence;
-        root.className = 'sigma-dialog';
+        root.className = 'sigma-dialog sigma-dialog--drawer';
         root.hidden = true;
         var titleId = 'sigmaDialogTitle_' + instanceSequence;
         root.innerHTML =
@@ -265,6 +267,10 @@
         if (!current || !surface || !frame) return;
         if (root.classList.contains('is-maximized') || root.classList.contains('is-minimized')) return;
         var maxWidth = Math.max(320, window.innerWidth - (window.innerWidth <= 680 ? 0 : 20));
+        if (DRAWER) {
+            surface.style.setProperty('--sigma-dialog-width', clamp(Math.round(current.width * .78), 460, Math.min(860, maxWidth)) + 'px');
+            return;
+        }
         surface.style.setProperty('--sigma-dialog-width', clamp(current.width, 320, maxWidth) + 'px');
         frame.style.height = clamp(current.initialHeight, current.minHeight, viewportFrameHeight()) + 'px';
     }
@@ -326,7 +332,7 @@
     }
 
     function measure() {
-        if (!current || root.hidden || measuring || window.innerWidth <= 680 ||
+        if (DRAWER || !current || root.hidden || measuring || window.innerWidth <= 680 ||
             root.classList.contains('is-maximized') || root.classList.contains('is-minimized')) return;
 
         measuring = true;
@@ -581,7 +587,7 @@
             var loader = openingRoot.querySelector('.sigma-dialog__loader');
             var particles = openingRoot.querySelectorAll('.sigma-dialog__particle');
 
-            if (window.gsap) {
+            if (window.gsap && !DRAWER) {
                 if (modalTimeline) modalTimeline.kill();
                 gsap.killTweensOf([backdrop, openingSurface, barItems, loader, particles]);
                 gsap.set([backdrop, openingSurface], { transition: 'none' });
@@ -703,7 +709,7 @@
             finishClose(closingRoot, closingFrame, focusTarget);
         }
 
-        if (window.gsap) {
+        if (window.gsap && !DRAWER) {
             if (modalTimeline) modalTimeline.kill();
             var inner = closingRoot.querySelectorAll('.sigma-dialog__frame');
             gsap.killTweensOf([closingBackdrop, closingSurface, inner]);
@@ -713,7 +719,7 @@
                 .to(inner, { opacity: 0, y: -5, duration: .16, stagger: .025, ease: 'power2.in' }, 0)
                 .to(closingSurface, { opacity: 0, y: 24, scale: .975, duration: .34, ease: 'power3.in' }, .06)
                 .to(closingBackdrop, { opacity: 0, duration: .28, ease: 'power2.inOut' }, .10);
-        } else closeTimer = window.setTimeout(done, 190);
+        } else closeTimer = window.setTimeout(done, DRAWER ? 240 : 190);
 
         return false;
     }
@@ -917,7 +923,7 @@
     }
 
     function dragStart(event) {
-        if (!current || root.hidden || window.innerWidth <= 680 ||
+        if (DRAWER || !current || root.hidden || window.innerWidth <= 680 ||
             root.classList.contains('is-maximized') || root.classList.contains('is-minimized') ||
             (event.target.closest && event.target.closest('button'))) return;
 

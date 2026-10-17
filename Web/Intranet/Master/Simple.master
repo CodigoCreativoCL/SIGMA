@@ -70,7 +70,8 @@
     <link href="../Css/UI/WebControls/CheckBox.css?vrs=1" rel="stylesheet" />
 
     <!-- SweetAlert CSS -->
-    <link href="../Css/LookAndFeel/sigma-dialog.css?vrs=8" rel="stylesheet" />
+    <link href="../Css/LookAndFeel/sigma-dialog.css?vrs=9" rel="stylesheet" />
+    <link href="../Css/LookAndFeel/sigma-aviso.css?vrs=1" rel="stylesheet" />
     <link href="../Css/SweetAlert/sweetalert.css?vrs=2" rel="stylesheet" />
     <link href="../Css/SweetAlert/sweetalert2.min.css?vrs=2" rel="stylesheet" />
     <%-- Los botones del sitio. Va DESPUES de todas las demas: redefine
@@ -131,7 +132,7 @@
                         <asp:ScriptReference Path="~/Js/Library.js?vrs=8" />
                         <%-- Define `.modal()`, que ClientAlert necesita y Bootstrap JS no
                              esta para dar. Va DESPUES de Library.js, que es quien lo usa. --%>
-                        <asp:ScriptReference Path="~/Js/sigma-alerta-modal.js" />
+                        <asp:ScriptReference Path="~/Js/sigma-alerta-modal.js?vrs=2" />
                         <asp:ScriptReference Path="~/Js/sigma-popover.js?vrs=1" />
                         <asp:ScriptReference Path="~/Js/highcharts/highcharts.js" />
                         <asp:ScriptReference Path="~/Js/highcharts/highchartTable-min.js" />
@@ -142,7 +143,8 @@
                              masiva de usuarios lo hace—, y el componente soporta
                              instancias anidadas. Sin esto, esa llamada revienta con
                              "SigmaModal is not defined". --%>
-                        <asp:ScriptReference Path="~/Js/sigma-dialog.js?vrs=3" />
+                        <asp:ScriptReference Path="~/Js/sigma-dialog.js?vrs=4" />
+                        <asp:ScriptReference Path="~/Js/sigma-aviso.js?vrs=1" />
                         <%-- GSAP va ANTES del calendario: el componente
                              comprueba `window.gsap` y si no esta, se abre sin
                              animacion. En los modales quedaba sin ella. --%>

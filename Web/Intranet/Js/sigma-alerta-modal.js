@@ -51,8 +51,25 @@
             $('body').removeClass('sg-aviso-bloqueado');
     }
 
+    /* Desde el 17-10-2026 el aviso se pinta con SigmaAviso (diálogo/toast del diseño nuevo). Se lee lo que armó ClientAlert o
+       AlertSweet —mensaje y tipo por el icono— y se descarta ese HTML. Si SigmaAviso no cargó, queda el aviso de siempre. */
+    function conAvisoNuevo($caja) {
+        if (!window.SigmaAviso || !$caja.is('#myModal, #myAlertSweet')) return false;
+        var tipo = $caja.find('.sa-error').length ? 'error' : $caja.find('.sa-success').length ? 'ok' : $caja.find('.sa-warning').length ? 'alerta' : 'info';
+        var esSweet = $caja.is('#myAlertSweet');
+        var ps = $caja.find('.modal-body p');
+        var titulo = esSweet ? $.trim(ps.eq(0).text()) : '';
+        var mensaje = esSweet ? ps.eq(1).html() : ps.eq(0).html();
+        $caja.remove();
+        var alAceptar = esSweet || typeof window.CloseWindows !== 'function' ? null : window.CloseWindows;
+        window.SigmaAviso.mostrar(mensaje, tipo, { titulo: titulo || undefined, alAceptar: alAceptar });
+        return true;
+    }
+
     $.fn.modal = function (accion) {
         var $caja = this;
+
+        if (!accion && conAvisoNuevo($caja)) return this;
 
         if (accion === 'hide') {
             esconder($caja);

@@ -511,6 +511,18 @@ function ConfirSweetAlert(btn, Titulo, Mensaje) {
         return true;
     };
 
+    if (window.SigmaAviso) {
+        var boton = btn;
+        objSweetAlert.ele = boton;
+        window.SigmaAviso.confirmar({ titulo: Titulo, mensaje: Mensaje, aceptar: 'Sí' }).then(function (ok) {
+            if (ok) {
+                objSweetAlert.status = true;
+                boton.click();
+            }
+        });
+        return false;
+    }
+
     Swal.fire({
         title: Titulo,
         text: Mensaje,

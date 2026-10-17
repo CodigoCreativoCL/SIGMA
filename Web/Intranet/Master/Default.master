@@ -114,7 +114,8 @@
     <link href="../Css/LookAndFeel/sigma-notificaciones.css?vrs=30" rel="stylesheet" />
     <link href="../Css/LookAndFeel/sigma-notificaciones-np.css?vrs=3" rel="stylesheet" />
     <link href="../Css/LookAndFeel/sigma-toast.css?vrs=1" rel="stylesheet" />
-    <link href="../Css/LookAndFeel/sigma-dialog.css?vrs=8" rel="stylesheet" />
+    <link href="../Css/LookAndFeel/sigma-dialog.css?vrs=9" rel="stylesheet" />
+    <link href="../Css/LookAndFeel/sigma-aviso.css?vrs=1" rel="stylesheet" />
     <link href="../Css/LookAndFeel/sigma-listas.css?vrs=14" rel="stylesheet" />
     <%-- Los botones del sitio. Va DESPUES de todas las demas: redefine
          reglas de Grid.css y Button.css que traen !important, y para
@@ -202,7 +203,7 @@
                     <asp:ScriptReference Path="~/Js/Library.js?vrs=9" />
                     <%-- Define `.modal()`, que ClientAlert necesita y Bootstrap JS no
                          esta para dar. Va DESPUES de Library.js, que es quien lo usa. --%>
-                    <asp:ScriptReference Path="~/Js/sigma-alerta-modal.js" />
+                    <asp:ScriptReference Path="~/Js/sigma-alerta-modal.js?vrs=2" />
                         <asp:ScriptReference Path="~/Js/sigma-popover.js?vrs=1" />
                     <asp:ScriptReference Path="~/Js/highcharts/highcharts.js" />
                     <asp:ScriptReference Path="~/Js/highcharts/highchartTable-min.js" />
@@ -651,7 +652,8 @@
                  pero el marco, el responsive y el ciclo de vida ya no dependen
                  de RadWindow. Debe cargarse antes de las aperturas de cada vista. --%>
             <script type="text/javascript" src="<%=ResolveUrl("~/Js/gsap/gsap.min.js") %>"></script>
-            <script type="text/javascript" src="<%=ResolveUrl("~/Js/sigma-dialog.js") %>?vrs=10"></script>
+            <script type="text/javascript" src="<%=ResolveUrl("~/Js/sigma-dialog.js") %>?vrs=11"></script>
+            <script type="text/javascript" src="<%=ResolveUrl("~/Js/sigma-aviso.js") %>?vrs=1"></script>
             <script type="text/javascript" src="<%=ResolveUrl("~/Js/sigma-notificaciones-panel.js") %>?vrs=7"></script>
             <script type="text/javascript" src="<%=ResolveUrl("~/Js/sigma-sidebar.js") %>?vrs=2"></script>
             <script type="text/javascript" src="<%=ResolveUrl("~/Js/sigma-calendario.js") %>?vrs=6"></script>

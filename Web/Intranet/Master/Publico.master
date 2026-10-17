@@ -10,6 +10,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
     <title>SecurityGes</title>
     <link href="../Imagen/fav.ico" rel="shortcut icon" type="image/vnd.microsoft.icon" />
+    <link href="../Css/LookAndFeel/sigma-aviso.css?vrs=1" rel="stylesheet" />
 
     <!-- Bootstrap Css -->
     <link href="../Css/Adminto/assets/css/bootstrap.min.css" rel="stylesheet" type="text/css" />
@@ -87,6 +88,8 @@
                     <Scripts>
                         <asp:ScriptReference Path="~/Js/jquery-1.9.1.js" />
                         <asp:ScriptReference Path="~/Js/Library.js" />
+                        <asp:ScriptReference Path="~/Js/sigma-aviso.js?vrs=1" />
+                        <asp:ScriptReference Path="~/Js/sigma-alerta-modal.js?vrs=2" />
                         <asp:ScriptReference Path="~/Js/highcharts/highcharts.js" />
                         <asp:ScriptReference Path="~/Js/highcharts/highchartTable-min.js" />
                         <asp:ScriptReference Path="~/Css/AjaxProgress/jsUpdateProgress.js" />
