@@ -117,6 +117,7 @@
     <link href="../Css/LookAndFeel/sigma-drawer.css?vrs=2" rel="stylesheet" />
     <link href="../Css/LookAndFeel/sigma-aviso.css?vrs=2" rel="stylesheet" />
     <link href="../Css/LookAndFeel/sigma-grilla.css?vrs=2" rel="stylesheet" />
+    <link href="../Css/LookAndFeel/sigma-combo.css?vrs=1" rel="stylesheet" />
     <link href="../Css/LookAndFeel/sigma-listas.css?vrs=14" rel="stylesheet" />
     <%-- Los botones del sitio. Va DESPUES de todas las demas: redefine
          reglas de Grid.css y Button.css que traen !important, y para
@@ -656,6 +657,8 @@
             <script type="text/javascript" src="<%=ResolveUrl("~/Js/sigma-drawer.js") %>?vrs=3"></script>
             <script type="text/javascript" src="<%=ResolveUrl("~/Js/sigma-aviso.js") %>?vrs=1"></script>
             <script type="text/javascript" src="<%=ResolveUrl("~/Js/sigma-grilla.js") %>?vrs=2"></script>
+            <script type="text/javascript" src="<%=ResolveUrl("~/Js/sigma-combo.js") %>?vrs=1"></script>
+            <script type="text/javascript" src="<%=ResolveUrl("~/Js/sigma-combo-adaptador.js") %>?vrs=1"></script>
             <script type="text/javascript" src="<%=ResolveUrl("~/Js/sigma-notificaciones-panel.js") %>?vrs=7"></script>
             <script type="text/javascript" src="<%=ResolveUrl("~/Js/sigma-sidebar.js") %>?vrs=2"></script>
             <script type="text/javascript" src="<%=ResolveUrl("~/Js/sigma-calendario.js") %>?vrs=6"></script>
