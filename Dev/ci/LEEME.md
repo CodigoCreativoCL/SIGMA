@@ -21,6 +21,7 @@ Cada push a `master` (que no sea solo documentación) ejecuta `.github/workflows
 | `DB_CONNECTION_PROD` | Cadena de conexión de la base `sigma` de HostChile |
 | `MACHINE_VALIDATION_KEY` | 128 caracteres hex aleatorios |
 | `MACHINE_DECRYPTION_KEY` | 64 caracteres hex aleatorios |
+| `JOBS_CLAVE` | La clave de los jobs: la usa `jobs-sigma.yml` para llamar a `Jobs.aspx` y el despliegue la escribe sola como `JobsClave` en el `Web.config` de producción |
 | `INTRANET_APPSETTINGS_JSON` | (opcional) `{"ServiciosApiKey":"…","Crypto":"…"}` con valores de producción |
 | `API_APPSETTINGS_JSON` | (opcional) `{"JWT_SECRET_KEY":"…","ServiciosApiKey":"…"}` con valores de producción |
 

@@ -40,6 +40,10 @@ function AjustesJson([string]$nombre) {
 }
 $extraWeb = AjustesJson 'INTRANET_APPSETTINGS_JSON'
 $extraApi = AjustesJson 'API_APPSETTINGS_JSON'
+# La clave de los jobs sale del MISMO secreto JOBS_CLAVE que usa jobs-sigma.yml para llamar a Jobs.aspx: asi nunca discrepan
+# (y no hay que copiarla dentro de INTRANET_APPSETTINGS_JSON). Si el JSON ya trae JobsClave, manda el JSON.
+$jobsClave = [Environment]::GetEnvironmentVariable('JOBS_CLAVE')
+if (-not [string]::IsNullOrWhiteSpace($jobsClave) -and -not $extraWeb.ContainsKey('JobsClave')) { $extraWeb['JobsClave'] = $jobsClave.Trim() }
 
 function PonerAjuste($doc, [string]$clave, [string]$valor) {
     $apps = $doc.SelectSingleNode('/configuration/appSettings')

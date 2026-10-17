@@ -78,6 +78,7 @@ jobs:
           MACHINE_VALIDATION_KEY: ${{ secrets.MACHINE_VALIDATION_KEY }}
           MACHINE_DECRYPTION_KEY: ${{ secrets.MACHINE_DECRYPTION_KEY }}
           INTRANET_APPSETTINGS_JSON: ${{ secrets.INTRANET_APPSETTINGS_JSON }}
+          JOBS_CLAVE: ${{ secrets.JOBS_CLAVE }}
           API_APPSETTINGS_JSON: ${{ secrets.API_APPSETTINGS_JSON }}
         run: ./Dev/ci/configurar_produccion.ps1 -Web "$pwd\_publicar\web" -Api "$pwd\_publicar\api"
 
