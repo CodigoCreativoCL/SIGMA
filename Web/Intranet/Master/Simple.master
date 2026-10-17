@@ -70,8 +70,9 @@
     <link href="../Css/UI/WebControls/CheckBox.css?vrs=1" rel="stylesheet" />
 
     <!-- SweetAlert CSS -->
-    <link href="../Css/LookAndFeel/sigma-drawer.css?vrs=1" rel="stylesheet" />
-    <link href="../Css/LookAndFeel/sigma-aviso.css?vrs=1" rel="stylesheet" />
+    <link href="../Css/LookAndFeel/sigma-drawer.css?vrs=2" rel="stylesheet" />
+    <link href="../Css/LookAndFeel/sigma-aviso.css?vrs=2" rel="stylesheet" />
+    <link href="../Css/LookAndFeel/sigma-grilla.css?vrs=2" rel="stylesheet" />
     <link href="../Css/SweetAlert/sweetalert.css?vrs=2" rel="stylesheet" />
     <link href="../Css/SweetAlert/sweetalert2.min.css?vrs=2" rel="stylesheet" />
     <%-- Los botones del sitio. Va DESPUES de todas las demas: redefine
@@ -136,15 +137,16 @@
                         <asp:ScriptReference Path="~/Js/sigma-popover.js?vrs=1" />
                         <asp:ScriptReference Path="~/Js/highcharts/highcharts.js" />
                         <asp:ScriptReference Path="~/Js/highcharts/highchartTable-min.js" />
-                        <asp:ScriptReference Path="~/Css/AjaxProgress/jsUpdateProgress.js" />
+                        <asp:ScriptReference Path="~/Css/AjaxProgress/jsUpdateProgress.js?vrs=2" />
                         <asp:ScriptReference Path="~/Css/UI/WebControls/calendar/PopCalendarFunctionsAjaxNet.js" />
                         <%-- El modal de SIGMA. Va tambien en este master porque una ficha
                              que ya esta DENTRO de un modal puede abrir otro —la carga
                              masiva de usuarios lo hace—, y el componente soporta
                              instancias anidadas. Sin esto, esa llamada revienta con
                              "SigmaDrawer is not defined". --%>
-                        <asp:ScriptReference Path="~/Js/sigma-drawer.js?vrs=1" />
+                        <asp:ScriptReference Path="~/Js/sigma-drawer.js?vrs=3" />
                         <asp:ScriptReference Path="~/Js/sigma-aviso.js?vrs=1" />
+                        <asp:ScriptReference Path="~/Js/sigma-grilla.js?vrs=2" />
                         <%-- GSAP va ANTES del calendario: el componente
                              comprueba `window.gsap` y si no esta, se abre sin
                              animacion. En los modales quedaba sin ella. --%>

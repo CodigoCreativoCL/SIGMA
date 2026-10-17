@@ -24,6 +24,12 @@ function beginReq(sender, args) {
        ver pegado. La pagina lo apaga con window.SIGMA_SIN_VELO = true. */
     if (window.SIGMA_SIN_VELO) return;
 
+    /* DENTRO DE UN DRAWER NO HAY VELO AL ABRIR
+       Una ficha en el drawer (iframe con radWindow) hace sus primeras idas al servidor mientras se abre; el velo de pantalla
+       completa sobre el panel recién abierto se veía como un fallo. Ahí solo se muestra si la espera pasa de 4 s. */
+    var enDrawer = false;
+    try { enDrawer = !!(window.frameElement && window.frameElement.radWindow); } catch (e) { }
+
     esperaModal = setTimeout(function () {
         $find(ModalProgress).show();
 
@@ -34,7 +40,7 @@ function beginReq(sender, args) {
 
         clearInterval(intervaloModalTiempoCarga);
         intervaloModalTiempoCarga = setInterval(ModalTiempoCargaSegundos, 1000);
-    }, 600);
+    }, enDrawer ? 4000 : 600);
 }
 
 function endReq(sender, args) {

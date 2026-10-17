@@ -82,12 +82,18 @@
         var cfg = normalizar(a, b);
         if (!cfg.url) return false;
 
+        /* Abrir un drawer nunca debe dejar el velo de «procesando» de la página: se cancela el que estuviera agendado o visible. */
+        try {
+            if (typeof esperaModal !== 'undefined') window.clearTimeout(esperaModal);
+            if (typeof ModalProgress !== 'undefined' && window.$find) { var mp = window.$find(ModalProgress); if (mp) mp.hide(); }
+        } catch (e) { }
+
         var host = document.createElement('div');
         host.className = 'cp-root sg-drawer-host';
         host.innerHTML =
             '<div class="cp-scr" data-sgd="x"></div>' +
             '<aside class="cp-pnl ' + cfg.clase + '" role="dialog" aria-modal="true">' +
-                '<div class="cp-pnl-h"><div class="cp-t"><small>SIGMA</small><h3>' + esc(cfg.title) + '</h3></div>' +
+                '<div class="cp-pnl-h"><div class="cp-t"><small>' + (cfg.recordId ? 'ID ' + esc(cfg.recordId) : 'SIGMA') + '</small><h3>' + esc(cfg.title) + '</h3></div>' +
                 '<button type="button" class="cp-ibx" data-sgd="x" aria-label="Cerrar panel">' + X + '</button></div>' +
                 '<div class="cp-pnl-b"><div class="sg-drawer-load">Cargando…</div><iframe class="sg-drawer-frame" title="' + esc(cfg.title) + '"></iframe></div>' +
             '</aside>';
