@@ -257,5 +257,138 @@
   ],
   "detalle": "Ejecutado durante el Sprint 3 como lado servidor; la historia se reprogramó al Sprint 6 (Sprint Review 1). Capturas en capturas/S3/.",
   "fecha": "16-09-2026 11:25"
+ },
+ {
+  "hu": "HU-200",
+  "criterio": 1,
+  "titulo": "Revisión previa sin escribir",
+  "usuario": "root",
+  "tipo": "Web",
+  "pasos": "Utilidades › Carga de datos › Activos › subir la planilla › Revisar.",
+  "esperado": "Vista previa con filas válidas y con error; nada se crea hasta confirmar.",
+  "obtenido": "La revisión informa cuántas filas se crearían, actualizarían u omitirían y cuáles tienen error, sin escribir nada.",
+  "ok": true,
+  "capturas": [
+   "hu200_car_03_archivo_cargado.jpg",
+   "hu200_car_05_revision_resultado.jpg"
+  ],
+  "detalle": "",
+  "fecha": "16-10-2026 13:29",
+  "sync16": true
+ },
+ {
+  "hu": "HU-200",
+  "criterio": 3,
+  "titulo": "Confirmación de la carga",
+  "usuario": "root",
+  "tipo": "Web",
+  "pasos": "Carga de datos › Cargar lo revisado.",
+  "esperado": "Se crean los registros válidos y se informa cuántos y cuántos quedaron pendientes.",
+  "obtenido": "La carga confirmada crea lo válido y muestra el resultado por hoja; una fila mala no detiene la carga.",
+  "ok": true,
+  "capturas": [
+   "hu200_car_04_botones.jpg",
+   "hu200_car_08_inventario_ok.jpg"
+  ],
+  "detalle": "",
+  "fecha": "16-10-2026 13:33",
+  "sync16": true
+ },
+ {
+  "hu": "HU-200",
+  "criterio": 4,
+  "titulo": "Descarga de la plantilla con ejemplo",
+  "usuario": "root",
+  "tipo": "Web",
+  "pasos": "Carga de datos › Descargar plantilla.",
+  "esperado": "Planilla con las columnas esperadas y un ejemplo.",
+  "obtenido": "La plantilla trae las hojas del módulo, una fila EJEMPLO que se ignora al leer y las hojas de ayuda de la empresa.",
+  "ok": true,
+  "capturas": [
+   "hu200_car_01_centro.jpg",
+   "hu200_car_02_wizard_activos.jpg"
+  ],
+  "detalle": "",
+  "fecha": "16-10-2026 13:37",
+  "sync16": true
+ },
+ {
+  "hu": "HU-201",
+  "criterio": 1,
+  "titulo": "Error por celda con hoja, fila y columna",
+  "usuario": "root",
+  "tipo": "Web",
+  "pasos": "Revisar una planilla con errores (libro 2b de la presentación).",
+  "esperado": "Cada celda con problema se informa con su valor y su motivo; las correctas de la fila se conservan.",
+  "obtenido": "La revisión lista hoja, fila, columna, valor y motivo de cada error y permite descargarlos en Excel.",
+  "ok": true,
+  "capturas": [
+   "hu201_car_06_errores_historial.jpg"
+  ],
+  "detalle": "",
+  "fecha": "16-10-2026 13:41",
+  "sync16": true
+ },
+ {
+  "hu": "HU-201",
+  "criterio": 4,
+  "titulo": "Una fila mala no detiene la carga",
+  "usuario": "root",
+  "tipo": "Base de datos",
+  "pasos": "Carga en transacción con tres errores esperados (harness del 15-10-2026).",
+  "esperado": "Las filas con error quedan registradas y no crean nada.",
+  "obtenido": "Revisión: 16 se crearían y 3 errores esperados; carga: 15 creadas; las filas con error no crearon registros.",
+  "ok": true,
+  "capturas": [],
+  "detalle": "Prueba dentro de una transacción con rollback; los resultados se tomaron de la salida del procedimiento PRC_CARGA_MANTENIMIENTO.",
+  "fecha": "16-10-2026 13:45",
+  "sync16": true
+ },
+ {
+  "hu": "HU-202",
+  "criterio": 1,
+  "titulo": "Estructura del plan interpretada",
+  "usuario": "root",
+  "tipo": "Base de datos",
+  "pasos": "Módulo Mantenimiento: frecuencias, tareas, checklists, planes, hitos, actividades y equipos (BD/473).",
+  "esperado": "Se identifican equipos, hitos y actividades antes de confirmar.",
+  "obtenido": "La revisión interpreta las 10 hojas en el orden en que se necesitan y dice qué se crearía de cada una.",
+  "ok": true,
+  "capturas": [],
+  "detalle": "Prueba dentro de una transacción con rollback.",
+  "fecha": "16-10-2026 13:49",
+  "sync16": true
+ },
+ {
+  "hu": "HU-202",
+  "criterio": 3,
+  "titulo": "Plan creado en borrador con sus hitos",
+  "usuario": "root",
+  "tipo": "Base de datos",
+  "pasos": "Cargar la planilla y repetirla (segunda pasada).",
+  "esperado": "Plan con su versión en borrador, hitos y actividades; sin duplicados al repetir.",
+  "obtenido": "Carga: 15 creadas, checklist publicado, plan activado con 26 ocurrencias (ACTIVAR = SI); segunda pasada: 0 creadas, 7 actualizadas, 9 omitidas, sin duplicados.",
+  "ok": true,
+  "capturas": [],
+  "detalle": "Con ACTIVAR = NO el plan queda en borrador, como en los libros de la presentación.",
+  "fecha": "16-10-2026 13:53",
+  "sync16": true
+ },
+ {
+  "hu": "HU-203",
+  "criterio": 1,
+  "titulo": "Historial de cargas",
+  "usuario": "root",
+  "tipo": "Web",
+  "pasos": "Carga de datos › historial.",
+  "esperado": "Cada carga con archivo, fecha, usuario, módulo y resultado.",
+  "obtenido": "El historial lista cada revisión y carga con su resultado y permite alertar un problema.",
+  "ok": true,
+  "capturas": [
+   "hu203_car_06_errores_historial.jpg"
+  ],
+  "detalle": "",
+  "fecha": "16-10-2026 13:57",
+  "sync16": true
  }
 ]

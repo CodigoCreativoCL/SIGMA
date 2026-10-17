@@ -1,6 +1,6 @@
 # Estado automático (generado, no editar a mano)
 
-Generado: 2026-10-16 18:18 · rama: `BryanChavez` · HEAD `50ebadcd`
+Generado: 2026-10-16 22:43 · rama: `BryanChavez` · HEAD `133988af`
 
 ## Últimas migraciones SQL (BD/)
 
@@ -13,6 +13,9 @@ Generado: 2026-10-16 18:18 · rama: `BryanChavez` · HEAD `50ebadcd`
 
 ## Últimos commits
 
+- 133988af 2026-10-16 Nessgod: Manuales de flujo con capturas (Comercial, Activos, Inventario) y manuales EP actualizados a v2.0
+- c5c47cc5 2026-10-16 Nessgod: Carga de datos: libros de la presentacion (inventario, activos, mantenimiento) y correccion de datos tecnicos de texto
+- 706e5771 2026-10-16 Nessgod: Estado y boveda: carga de datos Mantenimiento, master al dia
 - 50ebadcd 2026-10-16 Nessgod: Centro Comercial: pendientes versionados (Webpay, Jobs.aspx, CambiarClave, estilos, mockups)
 - c21617bd 2026-10-16 Nessgod: Carga de datos: modulo Mantenimiento completo (BD/473)
 - fdb0b7de 2026-10-16 Nessgod: Workflow que despierta Jobs.aspx cada 5 minutos
@@ -22,9 +25,6 @@ Generado: 2026-10-16 18:18 · rama: `BryanChavez` · HEAD `50ebadcd`
 - 6981bcce 2026-10-16 Nessgod: Jobs agendados y correos por cola (mesa de ayuda, alertas, demos, bienvenida, recuperación)
 - 536d987b 2026-10-16 Nessgod: Centro Comercial: ciclo completo de Hamburgo (propuesta, contrato, Webpay y transferencia), logo y plantas en el cajon Cliente, reintento de correo sin copia
 - 9c6b081f 2026-10-16 Nessgod: Centro Comercial: Firma.aspx.cs y WsComercial.asmx que faltaban en el repositorio
-- bba34715 2026-10-16 Nessgod: Centro Comercial: formulario publico con pais e identificador y migraciones 455-462 de la iteracion 1
-- 88d3a734 2026-10-16 Nessgod: Centro Comercial V2 bloque 11: seccion Suscripcion en la ficha del cliente, enlaces antiguos redirigen al Centro, bitacora y boveda
-- 1469c0c4 2026-10-16 Nessgod: Centro Comercial V2 bloque 10: Mi suscripcion (P6) en cajon, con pagar ahora e informar transferencia
 
 ## Módulos y pantallas
 
