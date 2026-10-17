@@ -43,9 +43,12 @@ public class WsInicio : System.Web.Services.WebService
         new[] { "sop",     "Soporte",              "~/View/Soporte/Inicio.aspx",                               "0" },
         new[] { "alert",   "Alertas",              URL_NOTIF,                                                  "0" },
         new[] { "med",     "Medidores",            "~/View/Activos/Medidores/ActivoMedidores.aspx",            "0" },
-        new[] { "ter",     "Terceros",             "~/View/Terceros/Proveedores/Proveedores.aspx",             "0" }
+        new[] { "ter",     "Terceros",             "~/View/Terceros/Proveedores/Proveedores.aspx",             "0" },
+        new[] { "com",     "Centro Comercial",     "~/View/Comercial/CentroComercial.aspx",                    "0" },
+        new[] { "ind",     "Indicadores",          "~/View/Mantenimiento/Indicadores/Indicadores.aspx",        "0" }
     };
-    private static readonly string[] POR_DEFECTO = { "twin", "ai", "ot", "plan", "activos", "rep", "perm", "sop" };
+    // Quien entra sin accesos guardados ve estos que PUEDE abrir; los comerciales (Centro Comercial, Indicadores) van al final: un perfil que solo trabaja en Comercial no tiene ninguno de los operativos.
+    private static readonly string[] POR_DEFECTO = { "twin", "ai", "ot", "plan", "activos", "rep", "perm", "sop", "com", "ind" };
 
     private static int N(Dictionary<string, object> r, string k) { object v; return r.TryGetValue(k, out v) && v != null ? Convert.ToInt32(v) : 0; }
 
@@ -93,6 +96,7 @@ public class WsInicio : System.Web.Services.WebService
 
             /* Las tarjetas de acceso: texto de estado en vivo y si la persona puede abrirlas. */
             List<object> catalogo = new List<object>();
+            HashSet<string> abribles = new HashSet<string>();
             foreach (string[] m in MODULOS)
             {
                 // 428: SIGMA Twin y SIGMA AI solo si el plan comercial los incluye.
@@ -122,13 +126,17 @@ public class WsInicio : System.Web.Services.WebService
                     case "alert": if (a.Requieren > 0) { s = a.Requieren + (a.Requieren == 1 ? " requiere acción" : " requieren acción"); dot = "#C7352B"; } else s = "Estás al día"; break;
                     case "med": s = a.Medidores > 0 ? a.Medidores + " sin lectura" : "Lecturas y contadores"; if (a.Medidores > 0) dot = "#B65C00"; break;
                     case "ter": s = "Proveedores y contratistas"; break;
+                    case "com": s = "Leads, pipeline y suscripciones"; break;
+                    case "ind": s = "Cumplimiento, disponibilidad y costos"; break;
                 }
-                catalogo.Add(new { k = m[0], n = m[1], url = Url(m[2]), dark = m[3] == "1", s = s, dot = dot, ok = Token.PuedePagina(m[2]) });
+                bool puede = Token.PuedePagina(m[2]);
+                if (puede) abribles.Add(m[0]);
+                catalogo.Add(new { k = m[0], n = m[1], url = Url(m[2]), dark = m[3] == "1", s = s, dot = dot, ok = puede });
             }
 
             List<string> pins;
             if (guardados.Count > 0) pins = guardados.Select(g => Convert.ToString(g["MODULO"])).Where(x => x != "-").ToList();
-            else pins = POR_DEFECTO.ToList();
+            else pins = POR_DEFECTO.Where(k => abribles.Contains(k)).ToList();
 
             return new
             {

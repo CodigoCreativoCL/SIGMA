@@ -5,7 +5,9 @@
         if (input.files && input.files[0]) {
             var reader = new FileReader();
             reader.onload = function (e) {
-                document.getElementById('<%= imgFoto.ClientID %>').src = e.target.result;
+                var img = document.getElementById('<%= imgFoto.ClientID %>');
+                img.src = e.target.result;
+                img.classList.add('has-foto');
             };
             reader.readAsDataURL(input.files[0]);
         }
@@ -22,233 +24,166 @@
         var input = document.getElementById(inputId);
         if (!input) return;
 
+        /* classList.add/remove no admiten clases con espacios: se cambia una por una. */
         if (input.type === "password") {
             input.type = "text";
-            icono.classList.remove("mdi mdi-eye-outline");
-            icono.classList.add("mdi mdi-eye-off-outline");
+            icono.classList.remove("mdi-eye-outline");
+            icono.classList.add("mdi-eye-off-outline");
         } else {
             input.type = "password";
-            icono.classList.remove("mdi mdi-eye-off-outline");
-            icono.classList.add("mdi mdi-eye-outline");
+            icono.classList.remove("mdi-eye-off-outline");
+            icono.classList.add("mdi-eye-outline");
         }
     }
 
     function toggleCambiarPassword(checkbox) {
         var contenedor = document.getElementById('<%= pnlCambiarPassword.ClientID %>');
         if (!contenedor) return;
-
-        if (checkbox.checked) {
-            contenedor.classList.add("is-open");
-        } else {
-            contenedor.classList.remove("is-open");
-        }
+        contenedor.classList.toggle("is-open", checkbox.checked);
     }
 </script>
 
 <asp:UpdatePanel runat="server" ID="udPanel" UpdateMode="Conditional">
     <ContentTemplate>
-        <div class="cliente-container identidad-card mb-3">
-            <div class="cliente-label">
-                <i class="mdi mdi-account-circle-outline"></i>
-                <span>Información Personal</span>
-            </div>
+        <div class="sg-mc">
 
-            <div class="row col-12">
-                <div class="col-lg-3 col-md-3 col-xs-12 identidad-avatar-col identidad-avatar-col-divider">
-                    <div class="identidad-avatar">
-                        <div class="identidad-avatar-placeholder">
-                            <i class="mdi mdi-account-outline"></i>
-                        </div>
-                        <asp:Image ID="imgFoto" runat="server" CssClass="identidad-avatar-img" />
-                        <asp:Panel ID="pnlFoto" runat="server" CssClass="identidad-avatar-upload">
-                            <i class="mdi mdi-camera-outline"></i>
-                            <asp:FileUpload ID="fldFoto" runat="server" CssClass="identidad-avatar-input" onchange="previsualizarFoto(this)" />
-                        </asp:Panel>
-                    </div>
-                    <div class="identidad-avatar-caption">
-                        <span>Foto de Perfil</span>
-                        <small>(.jpg, .png)</small>
-                    </div>
-                </div>
+            <%-- ---- Información personal ---- --%>
+            <div class="card-box sg-mc-card">
+                <h3 class="sg-mc-tit"><i class="mdi mdi-account-circle-outline"></i> Información personal</h3>
 
-                <div class="col-lg-9 col-md-9 col-xs-12">
-                    <div class="row col-12">
-                        <div class="form-group col-lg-6 col-md-6 col-xs-12 identidad-field">
-                            <label>Correo(*):</label>
-                            <WebControls:TextBox2 ID="txtCorreo" runat="server" MaxLength="200" onblur="validarCorreoMiCuenta()" />
-                            <asp:CustomValidator ID="cvCorreo" runat="server"
-                                ControlToValidate="txtCorreo"
-                                ValidateEmptyText="true"
-                                ClientValidationFunction="validaControl"
-                                ValidationGroup="MiCuenta" />
+                <div class="sg-mc-persona">
+                    <div class="sg-mc-avatar-col">
+                        <div class="sg-mc-avatar">
+                            <i class="mdi mdi-account-outline sg-mc-avatar-ph"></i>
+                            <asp:Image ID="imgFoto" runat="server" CssClass="sg-mc-avatar-img" AlternateText="Foto de perfil" />
+                            <asp:Panel ID="pnlFoto" runat="server" CssClass="sg-mc-avatar-subir" ToolTip="Cambiar foto">
+                                <i class="mdi mdi-camera-outline"></i>
+                                <asp:FileUpload ID="fldFoto" runat="server" CssClass="sg-mc-avatar-input" onchange="previsualizarFoto(this)" />
+                            </asp:Panel>
                         </div>
-                        <div class="form-group col-lg-6 col-md-6 col-xs-12 identidad-field">
-                            <label>Teléfono</label>
-                            <div class="identidad-field-icon">
-                                <i class="mdi mdi-phone-outline"></i>
+                        <span class="sg-mc-avatar-cap">Foto de perfil <small>(.jpg, .png)</small></span>
+                    </div>
+
+                    <div class="sg-mc-persona-datos">
+                        <div class="sg-mc-campos">
+                            <div class="sg-mc-campo">
+                                <label>Correo (*)</label>
+                                <WebControls:TextBox2 ID="txtCorreo" runat="server" MaxLength="200" onblur="validarCorreoMiCuenta()" />
+                                <asp:CustomValidator ID="cvCorreo" runat="server"
+                                    ControlToValidate="txtCorreo"
+                                    ValidateEmptyText="true"
+                                    ClientValidationFunction="validaControl"
+                                    ValidationGroup="MiCuenta" />
+                            </div>
+                            <div class="sg-mc-campo">
+                                <label>Teléfono</label>
                                 <WebControls:TextBox2 ID="txtTelefono" runat="server" MaxLength="20" />
                             </div>
                         </div>
-                    </div>
 
-                    <div class="identidad-section-divider">
-                        <span>Datos de la cuenta</span>
-                    </div>
-
-                    <div class="identidad-readonly-grid">
-                        <div class="identidad-readonly-item">
-                            <label>Usuario</label>
-                            <div class="identidad-readonly-chip-sm">
-                                <asp:Label ID="lblUsuario" runat="server"></asp:Label>
-                            </div>
-                        </div>
-                        <div class="identidad-readonly-item">
-                            <label>ID Usuario</label>
-                            <div class="identidad-readonly-chip-sm">
-                                <asp:Label ID="lblId" runat="server"></asp:Label>
-                            </div>
-                        </div>
-                        <div class="identidad-readonly-item">
-                            <label>Identificador</label>
-                            <div class="identidad-readonly-chip-sm">
-                                <asp:Label ID="lblIdentificador" runat="server"></asp:Label>
-                            </div>
-                        </div>
-                        <div class="identidad-readonly-item">
-                            <label>Nombre</label>
-                            <div class="identidad-readonly-chip-sm">
-                                <asp:Label ID="lblNombre" runat="server"></asp:Label>
-                            </div>
-                        </div>
-                        <div class="identidad-readonly-item">
-                            <label>Apellido Paterno</label>
-                            <div class="identidad-readonly-chip-sm">
-                                <asp:Label ID="lblApellidoPaterno" runat="server"></asp:Label>
-                            </div>
-                        </div>
-                        <div class="identidad-readonly-item">
-                            <label>Apellido Materno</label>
-                            <div class="identidad-readonly-chip-sm">
-                                <asp:Label ID="lblApellidoMaterno" runat="server"></asp:Label>
-                            </div>
-                        </div>
-                        <div class="identidad-readonly-item identidad-readonly-item-wide">
-                            <label>Nombre Completo</label>
-                            <div class="identidad-readonly-chip-sm">
-                                <asp:Label ID="lblNombreCompleto" runat="server"></asp:Label>
-                            </div>
-                        </div>
-                        <div class="identidad-readonly-item">
-                            <label>País</label>
-                            <div class="identidad-readonly-chip-sm">
-                                <asp:Label ID="lblPais" runat="server"></asp:Label>
-                            </div>
-                        </div>
-                        <div class="identidad-readonly-item identidad-readonly-item-wide">
-                            <label>Perfil / Rol</label>
-                            <div class="identidad-readonly-chip-sm">
-                                <asp:Label ID="lblPerfil" runat="server"></asp:Label>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <asp:Panel ID="pnlClientes" runat="server" CssClass="cliente-container identidad-card identidad-card-cliente mb-3" Visible="false">
-            <div class="cliente-label">
-                <i class="mdi mdi-office-building"></i>
-                <span>Clientes y plantas asociadas</span>
-            </div>
-
-            <div class="identidad-clientes-list">
-                <asp:Repeater ID="rptClientes" runat="server" OnItemDataBound="rptClientes_ItemDataBound">
-                    <ItemTemplate>
-                        <div class="identidad-cliente-card">
-                            <div class="identidad-cliente-header">
-                                <span class="identidad-cliente-id">#<%# Eval("cli_id") %></span>
-                                <span class="identidad-cliente-nombre"><%# Eval("cli_nombre") %></span>
-                            </div>
-                            <div class="identidad-instalaciones-tags">
-                                <asp:Repeater ID="rptInstalacionesCliente" runat="server">
-                                    <ItemTemplate>
-                                        <span class="identidad-tag">
-                                            <i class="mdi mdi-map-marker-outline"></i>
-                                            <%# Eval("Value") %>
-                                        </span>
-                                    </ItemTemplate>
-                                </asp:Repeater>
-                                <asp:Panel ID="pnlSinInstalaciones" runat="server" CssClass="identidad-tag identidad-tag-empty">
-                                    <span>Sin plantas asociadas</span>
-                                </asp:Panel>
-                            </div>
-                        </div>
-                    </ItemTemplate>
-                </asp:Repeater>
-            </div>
-        </asp:Panel>
-
-        <div class="cliente-container identidad-card mb-3">
-            <div class="cliente-label cliente-label-actions">
-                <div class="cliente-label-titulo">
-                    <i class="mdi mdi-lock-outline"></i>
-                    <span>Seguridad</span>
-                </div>
-                <div class="identidad-switch-row">
-                    <span>Cambiar contraseña</span>
-                    <label class="identidad-switch">
-                        <asp:CheckBox ID="chkCambiarPassword" runat="server" onclick="toggleCambiarPassword(this)" />
-                        <span class="identidad-switch-slider"></span>
-                    </label>
-                </div>
-            </div>
-
-            <div class="row col-12">
-                <div class="form-group col-lg-4 col-md-6 col-xs-12 identidad-field">
-                    <label>Contraseña Actual</label>
-                    <div class="identidad-password-field">
-                        <WebControls:TextBox2 ID="txtPasswordVer" runat="server" TextMode="Password" Enabled="false" />
-                        <i class="mdi mdi-eye-outline identidad-password-toggle" onclick="togglePasswordVisibility('<%= txtPasswordVer.ClientID %>', this)"></i>
+                        <h4 class="sg-mc-sub">Datos de la cuenta</h4>
+                        <dl class="sg-mc-datos">
+                            <div><dt>Usuario</dt><dd><asp:Label ID="lblUsuario" runat="server"></asp:Label></dd></div>
+                            <div><dt>ID de usuario</dt><dd><asp:Label ID="lblId" runat="server"></asp:Label></dd></div>
+                            <div><dt>Identificador</dt><dd><asp:Label ID="lblIdentificador" runat="server"></asp:Label></dd></div>
+                            <div><dt>Nombre</dt><dd><asp:Label ID="lblNombre" runat="server"></asp:Label></dd></div>
+                            <div><dt>Apellido paterno</dt><dd><asp:Label ID="lblApellidoPaterno" runat="server"></asp:Label></dd></div>
+                            <div><dt>Apellido materno</dt><dd><asp:Label ID="lblApellidoMaterno" runat="server"></asp:Label></dd></div>
+                            <div class="is-ancho"><dt>Nombre completo</dt><dd><asp:Label ID="lblNombreCompleto" runat="server"></asp:Label></dd></div>
+                            <div><dt>País</dt><dd><asp:Label ID="lblPais" runat="server"></asp:Label></dd></div>
+                            <div class="is-ancho"><dt>Perfil</dt><dd><asp:Label ID="lblPerfil" runat="server"></asp:Label></dd></div>
+                        </dl>
                     </div>
                 </div>
             </div>
 
-            <asp:Panel ID="pnlCambiarPassword" runat="server" CssClass="identidad-collapse">
-                <div class="row col-12">
-                    <div class="form-group col-lg-4 col-md-6 col-xs-12 identidad-field">
-                        <label>Contraseña Actual(*):</label>
-                        <div class="identidad-password-field">
-                            <WebControls:TextBox2 ID="txtPasswordActual" runat="server" TextMode="Password" MaxLength="100" />
-                            <i class="mdi mdi-eye-outline identidad-password-toggle" onclick="togglePasswordVisibility('<%= txtPasswordActual.ClientID %>', this)"></i>
-                        </div>
-                    </div>
-                    <div class="form-group col-lg-4 col-md-6 col-xs-12 identidad-field">
-                        <label>Nueva Contraseña(*):</label>
-                        <div class="identidad-password-field">
-                            <WebControls:TextBox2 ID="txtPasswordNueva" runat="server" TextMode="Password" MaxLength="100" />
-                            <i class="mdi mdi-eye-outline identidad-password-toggle" onclick="togglePasswordVisibility('<%= txtPasswordNueva.ClientID %>', this)"></i>
-                        </div>
-                    </div>
-                    <div class="form-group col-lg-4 col-md-6 col-xs-12 identidad-field">
-                        <label>Confirmar Contraseña(*):</label>
-                        <div class="identidad-password-field">
-                            <WebControls:TextBox2 ID="txtPasswordConfirmar" runat="server" TextMode="Password" MaxLength="100" />
-                            <i class="mdi mdi-eye-outline identidad-password-toggle" onclick="togglePasswordVisibility('<%= txtPasswordConfirmar.ClientID %>', this)"></i>
-                            <asp:CompareValidator ID="cvPasswordConfirmar" runat="server"
-                                ControlToValidate="txtPasswordConfirmar"
-                                ControlToCompare="txtPasswordNueva"
-                                Operator="Equal"
-                                ErrorMessage="Las contraseñas no coinciden."
-                                Display="Dynamic"
-                                ValidationGroup="MiCuenta" />
-                        </div>
-                    </div>
+            <%-- ---- Clientes y plantas ---- --%>
+            <asp:Panel ID="pnlClientes" runat="server" CssClass="card-box sg-mc-card" Visible="false">
+                <h3 class="sg-mc-tit"><i class="mdi mdi-office-building-outline"></i> Clientes y plantas asociadas</h3>
+
+                <div class="sg-mc-clientes">
+                    <asp:Repeater ID="rptClientes" runat="server" OnItemDataBound="rptClientes_ItemDataBound">
+                        <ItemTemplate>
+                            <div class="sg-mc-cliente">
+                                <div class="sg-mc-cliente-cab">
+                                    <span class="sg-mc-cliente-id">#<%# Eval("cli_id") %></span>
+                                    <strong><%# Eval("cli_nombre") %></strong>
+                                </div>
+                                <div class="sg-mc-chips">
+                                    <asp:Repeater ID="rptInstalacionesCliente" runat="server">
+                                        <ItemTemplate>
+                                            <span class="sg-mc-chip"><i class="mdi mdi-map-marker-outline"></i><%# Eval("Value") %></span>
+                                        </ItemTemplate>
+                                    </asp:Repeater>
+                                    <asp:Panel ID="pnlSinInstalaciones" runat="server" CssClass="sg-mc-chip is-vacio">
+                                        <span>Sin plantas asociadas</span>
+                                    </asp:Panel>
+                                </div>
+                            </div>
+                        </ItemTemplate>
+                    </asp:Repeater>
                 </div>
             </asp:Panel>
-        </div>
 
-        <div class="identidad-actions">
-            <WebControls:PushButton ID="btnGuardar" runat="server" Text="Guardar" OnClick="btnGuardar_Click" ValidationGroup="MiCuenta" />
+            <%-- ---- Seguridad ---- --%>
+            <div class="card-box sg-mc-card">
+                <div class="sg-mc-tit-fila">
+                    <h3 class="sg-mc-tit"><i class="mdi mdi-lock-outline"></i> Seguridad</h3>
+                    <div class="sg-mc-switch-fila">
+                        <span>Cambiar contraseña</span>
+                        <asp:CheckBox ID="chkCambiarPassword" runat="server" CssClass="sg-mc-switch" onclick="toggleCambiarPassword(this)" />
+                    </div>
+                </div>
+
+                <div class="sg-mc-campos">
+                    <div class="sg-mc-campo">
+                        <label>Contraseña</label>
+                        <div class="sg-mc-clave">
+                            <WebControls:TextBox2 ID="txtPasswordVer" runat="server" TextMode="Password" Enabled="false" />
+                            <i class="mdi mdi-eye-outline sg-mc-ojo" onclick="togglePasswordVisibility('<%= txtPasswordVer.ClientID %>', this)" title="Mostrar u ocultar"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <asp:Panel ID="pnlCambiarPassword" runat="server" CssClass="sg-mc-colapso">
+                    <div class="sg-mc-campos sg-mc-campos-3">
+                        <div class="sg-mc-campo">
+                            <label>Contraseña actual (*)</label>
+                            <div class="sg-mc-clave">
+                                <WebControls:TextBox2 ID="txtPasswordActual" runat="server" TextMode="Password" MaxLength="100" />
+                                <i class="mdi mdi-eye-outline sg-mc-ojo" onclick="togglePasswordVisibility('<%= txtPasswordActual.ClientID %>', this)" title="Mostrar u ocultar"></i>
+                            </div>
+                        </div>
+                        <div class="sg-mc-campo">
+                            <label>Nueva contraseña (*)</label>
+                            <div class="sg-mc-clave">
+                                <WebControls:TextBox2 ID="txtPasswordNueva" runat="server" TextMode="Password" MaxLength="100" />
+                                <i class="mdi mdi-eye-outline sg-mc-ojo" onclick="togglePasswordVisibility('<%= txtPasswordNueva.ClientID %>', this)" title="Mostrar u ocultar"></i>
+                            </div>
+                        </div>
+                        <div class="sg-mc-campo">
+                            <label>Confirmar contraseña (*)</label>
+                            <div class="sg-mc-clave">
+                                <WebControls:TextBox2 ID="txtPasswordConfirmar" runat="server" TextMode="Password" MaxLength="100" />
+                                <i class="mdi mdi-eye-outline sg-mc-ojo" onclick="togglePasswordVisibility('<%= txtPasswordConfirmar.ClientID %>', this)" title="Mostrar u ocultar"></i>
+                                <asp:CompareValidator ID="cvPasswordConfirmar" runat="server"
+                                    ControlToValidate="txtPasswordConfirmar"
+                                    ControlToCompare="txtPasswordNueva"
+                                    Operator="Equal"
+                                    ErrorMessage="Las contraseñas no coinciden."
+                                    Display="Dynamic"
+                                    ValidationGroup="MiCuenta" />
+                            </div>
+                        </div>
+                    </div>
+                </asp:Panel>
+            </div>
+
+            <div class="sigma-acciones-barra">
+                <asp:LinkButton ID="btnGuardar" runat="server" CssClass="sigma-accion is-primaria" OnClick="btnGuardar_Click" ValidationGroup="MiCuenta">
+                    <i class="mdi mdi-content-save-outline"></i><span>Guardar</span>
+                </asp:LinkButton>
+            </div>
         </div>
     </ContentTemplate>
 </asp:UpdatePanel>
