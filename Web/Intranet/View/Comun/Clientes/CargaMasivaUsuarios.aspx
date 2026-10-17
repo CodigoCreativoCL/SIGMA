@@ -298,7 +298,7 @@
                 return SigmaDrawer.open({
                     url: '<%=ResolveUrl("~/View/Comun/Procesamiento.aspx") %>',
                     title: 'Procesamiento',
-                    width: 1000,
+                    width: 520,
                     initialHeight: 500
                 });
                 bloqueaScroll(false);
