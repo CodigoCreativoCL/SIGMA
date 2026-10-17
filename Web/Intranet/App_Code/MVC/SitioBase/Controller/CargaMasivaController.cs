@@ -124,7 +124,8 @@ namespace SitioBase.Controller
                             C("NUMERO", "NUMERO", false, "Número del rack en el área. Vacío: el siguiente libre.", "1", Tipo.Entero, 10),
                             C("CODIGO", "CODIGO", false, "Solo si ya tiene un código impreso. Vacío: se arma solo.", "", Tipo.Texto, 18),
                             C("NOMBRE", "NOMBRE", false, "Vacío: «Pasillo A · Rack 01» (con el tipo de área).", "", Tipo.Texto, 26),
-                            C("CARGA_NIVEL_KG", "CARGA NIVEL KG", false, "Carga admisible por nivel. Vacío: 1.000 kg.", "1000", Tipo.Numero, 16, null, null, "CARGA KG", "CARGA")
+                            C("CARGA_NIVEL_KG", "CARGA NIVEL KG", false, "Carga admisible por nivel. Vacío: 1.000 kg.", "1000", Tipo.Numero, 16, null, null, "CARGA KG", "CARGA"),
+                            C("NIVELES", "NIVELES", false, "Cuántos niveles tiene el rack (1 a 10). Vacío: 4.", "4", Tipo.Entero, 10)
                         } },
                     new Hoja { clave = "REPUESTOS", titulo = "REPUESTOS", icono = "mdi-package-variant-closed",
                         descripcion = "Las mismas columnas de la carga de repuestos de siempre, más método y medidas. Con el mismo código se actualiza: las celdas vacías conservan lo que había.",
@@ -143,7 +144,7 @@ namespace SitioBase.Controller
                             C("VIDA_UTIL_CICLOS", "VIDA UTIL CICLOS", false, "Maniobras.", "", Tipo.Numero, 15),
                             C("DESCRIPCION", "DESCRIPCION", false, "Detalle técnico.", "Una hilera de bolas, sello de contacto.", Tipo.Texto, 36),
                             C("HABILITADO", "HABILITADO", false, "Solo al actualizar: NO lo da de baja.", "SI", Tipo.SiNo, 12, SINO),
-                            C("TIPO", "TIPO", false, "Código o nombre, como en la hoja TIPOS.", "MEC-RODAMIENTO", Tipo.Lista, 18, null, "TIPOS", "TIPO REPUESTO"),
+                            C("TIPO", "TIPO", false, "Categoría del repuesto (Rodamientos, Motores…). Si no existe, se crea.", "Rodamientos", Tipo.Lista, 18, null, "TIPOS", "TIPO REPUESTO"),
                             C("METODO_SALIDA", "METODO SALIDA", false, "Excepción del repuesto. «Según bodega» la quita.", "", Tipo.Lista, 16, METODOS_REP),
                             C("LARGO_CM", "LARGO CM", false, "Para el mapa 3D.", "", Tipo.Numero, 10, null, null, "LARGO"),
                             C("ANCHO_CM", "ANCHO CM", false, "", "", Tipo.Numero, 10, null, null, "ANCHO"),
@@ -165,7 +166,11 @@ namespace SitioBase.Controller
                         columnas = new List<Columna> {
                             C("REPUESTO", "REPUESTO", true, "Código del repuesto.", "EJEMPLO-ROD-001", Tipo.Texto, 20),
                             C("BODEGA", "BODEGA", true, "Código o nombre de la bodega.", "EJEMPLO-CENTRAL", Tipo.Texto, 20),
-                            C("RACK", "RACK", false, "Código o nombre del rack. Obligatorio si la bodega tiene racks.", "Pasillo A · Rack 01", Tipo.Texto, 20, null, null, "UBICACION"),
+                            C("PASILLO", "PASILLO", false, "Código del pasillo o área del rack (A, B…). Con él, RACK es solo el número.", "A", Tipo.Texto, 10),
+                            C("RACK", "RACK", false, "Con PASILLO: el número del rack (1, 2…). Sin PASILLO: su código o nombre. Obligatorio si la bodega tiene racks.", "1", Tipo.Texto, 14, null, null, "UBICACION"),
+                            C("NIVEL", "NIVEL", false, "Nivel del rack donde queda (1 = el más bajo, hasta los NIVELES del rack).", "1", Tipo.Entero, 9),
+                            C("POSICION", "POSICION", false, "Posición dentro del nivel, de 1 a 30. Vacío: la siguiente libre.", "", Tipo.Entero, 11),
+                            C("FILA", "FILA", false, "0 = delante, 1 = detrás. Vacío: 0.", "0", Tipo.Entero, 7),
                             C("CANTIDAD", "CANTIDAD", true, "Mayor que cero.", "12", Tipo.Numero, 11),
                             C("COSTO_UNITARIO", "COSTO UNITARIO", false, "En pesos. Valoriza el stock.", "8500", Tipo.Numero, 14, null, null, "COSTO"),
                             C("LOTE", "LOTE", false, "Obligatorio si el repuesto controla lote.", "", Tipo.Texto, 14),
@@ -281,17 +286,17 @@ namespace SitioBase.Controller
             {
                 clave = "MANTENIMIENTO",
                 nombre = "Mantenimiento",
-                descripcion = "Frecuencias, tareas recurrentes, checklists con sus campos, planes con sus intervenciones y actividades, y los equipos que cubre cada plan.",
+                descripcion = "Frecuencias, tareas recurrentes, inspecciones con sus campos, planes con sus intervenciones y actividades, y los equipos que cubre cada plan.",
                 icono = "mdi-calendar-check",
                 color = "#007F8A",
                 procedimiento = "PRC_CARGA_MANTENIMIENTO",
                 disponible = true,
-                ayudas = new[] { "PLANTAS", "AREAS", "ACTIVOS", "TIPOS ACTIVO", "TIPOS Y MODELOS", "UNIDADES", "FRECUENCIAS EXISTENTES", "TAREAS EXISTENTES", "CHECKLISTS EXISTENTES",
+                ayudas = new[] { "PLANTAS", "AREAS", "ACTIVOS", "TIPOS ACTIVO", "TIPOS Y MODELOS", "UNIDADES", "FRECUENCIAS EXISTENTES", "TAREAS EXISTENTES", "INSPECCIONES EXISTENTES",
                                  "PLANES EXISTENTES", "PERSONAS", "GRUPOS", "PRIORIDADES", "CATEGORIAS TAREA", "TIPOS ITEM", "TIPOS OT", "PRIORIDADES OT" },
                 hojas = new List<Hoja>
                 {
                     new Hoja { clave = "FRECUENCIAS", titulo = "FRECUENCIAS", icono = "mdi-calendar-sync",
-                        descripcion = "Cada cuánto se hace algo. SEMANAL (días de la semana), MENSUAL (día del mes) o CADA (cada N horas, días, semanas, meses o años). Se nombran en las hojas de tareas, checklists e hitos. Si el nombre ya existe y es propio de una intervención, se actualiza; las compartidas se editan en Programaciones.",
+                        descripcion = "Cada cuánto se hace algo. SEMANAL (días de la semana), MENSUAL (día del mes) o CADA (cada N horas, días, semanas, meses o años). Se nombran en las hojas de tareas, inspecciones e hitos. Si el nombre ya existe y es propio de una intervención, se actualiza; las compartidas se editan en Programaciones.",
                         columnas = new List<Columna> {
                             C("NOMBRE", "NOMBRE", true, "Cómo se llamará la frecuencia. Es lo que se escribe en las otras hojas.", "EJEMPLO-LUN-JUE", Tipo.Texto, 26),
                             C("TIPO", "TIPO", true, "SEMANAL, MENSUAL o CADA.", "SEMANAL", Tipo.Lista, 12, new[] { "SEMANAL", "MENSUAL", "CADA" }),
@@ -325,20 +330,20 @@ namespace SitioBase.Controller
                             C("RESPONSABLE", "RESPONSABLE", false, "Correo de la persona, como en la hoja PERSONAS.", "", Tipo.Lista, 28, null, "PERSONAS"),
                             C("GRUPO", "GRUPO", false, "Grupo de trabajo, como en la hoja GRUPOS.", "", Tipo.Lista, 18, null, "GRUPOS")
                         } },
-                    new Hoja { clave = "CHECKLISTS", titulo = "CHECKLISTS", icono = "mdi-clipboard-check-outline",
-                        descripcion = "Una fila por pauta. Las pautas NUEVAS se publican al terminar (si tienen campos en la hoja CHECKLIST ITEMS); una pauta ya publicada no se modifica desde aquí.",
+                    new Hoja { clave = "CHECKLISTS", titulo = "INSPECCIONES", icono = "mdi-clipboard-check-outline",
+                        descripcion = "Una fila por inspección (la ronda que se hace en terreno). Las NUEVAS se publican al terminar (si tienen campos en la hoja ITEMS DE INSPECCION); una inspección ya publicada no se modifica desde aquí.",
                         columnas = new List<Columna> {
                             C("CODIGO", "CODIGO", false, "Vacío: se numera solo (PAU-<nnn>).", "EJEMPLO-RONDA", Tipo.Texto, 18),
-                            C("NOMBRE", "NOMBRE", true, "Cómo se llama la pauta.", "Ronda de refrigeración", Tipo.Texto, 32),
+                            C("NOMBRE", "NOMBRE", true, "Cómo se llama la inspección.", "Ronda de refrigeración", Tipo.Texto, 32),
                             C("DESCRIPCION", "DESCRIPCION", false, "Para qué sirve.", "", Tipo.Texto, 36),
                             C("PLANTA", "PLANTA", false, "Como en la hoja PLANTAS. Vacío: sirve para cualquier planta.", "", Tipo.Lista, 18, null, "PLANTAS"),
                             C("TIPO_ACTIVO", "TIPO ACTIVO", false, "Si es solo para un tipo de equipo (hoja TIPOS ACTIVO).", "", Tipo.Lista, 18, null, "TIPOS ACTIVO", "TIPO"),
                             C("PUBLICAR", "PUBLICAR", false, "NO la deja en borrador. Vacío: SI.", "SI", Tipo.SiNo, 11, SINO)
                         } },
-                    new Hoja { clave = "CHECKLIST_ITEMS", titulo = "CHECKLIST ITEMS", icono = "mdi-format-list-checks",
-                        descripcion = "Los campos de cada pauta, agrupados en secciones (la sección se crea si no existe). Solo a pautas nuevas o en borrador; un campo que ya existe se omite.",
+                    new Hoja { clave = "CHECKLIST_ITEMS", titulo = "ITEMS DE INSPECCION", icono = "mdi-format-list-checks",
+                        descripcion = "Los campos de cada inspección, agrupados en secciones (la sección se crea si no existe). Solo a inspecciones nuevas o en borrador; un campo que ya existe se omite.",
                         columnas = new List<Columna> {
-                            C("CHECKLIST", "CHECKLIST", true, "Código o nombre de la pauta (de la hoja CHECKLISTS o de CHECKLISTS EXISTENTES).", "EJEMPLO-RONDA", Tipo.Lista, 24, null, "CHECKLISTS EXISTENTES", "PAUTA"),
+                            C("CHECKLIST", "INSPECCION", true, "Código o nombre de la inspección (de la hoja INSPECCIONES o de INSPECCIONES EXISTENTES).", "EJEMPLO-RONDA", Tipo.Lista, 24, null, "INSPECCIONES EXISTENTES", "CHECKLIST", "PAUTA"),
                             C("SECCION", "SECCION", false, "Agrupa los campos (Motor, Seguridad…). Vacío: sin sección.", "Motor", Tipo.Texto, 18),
                             C("CODIGO", "CODIGO", false, "Vacío: se numera solo (C001…).", "", Tipo.Texto, 12),
                             C("TEXTO", "TEXTO", true, "La pregunta o lo que se revisa.", "¿El motor hace ruido anormal?", Tipo.Texto, 42),
@@ -349,16 +354,16 @@ namespace SitioBase.Controller
                             C("EVIDENCIA", "EVIDENCIA", false, "SI: pide foto o archivo.", "NO", Tipo.SiNo, 11, SINO),
                             C("UNIDAD", "UNIDAD", false, "Solo para Medición, como en la hoja UNIDADES.", "", Tipo.Lista, 11, null, "UNIDADES")
                         } },
-                    new Hoja { clave = "CHECKLISTS_PROGRAMADOS", titulo = "CHECKLISTS PROGRAMADOS", icono = "mdi-calendar-check-outline",
-                        descripcion = "Dónde y cada cuánto se hace cada pauta: en un equipo o en un área (al menos uno). La pauta debe estar publicada (las de esta carga se publican antes).",
+                    new Hoja { clave = "CHECKLISTS_PROGRAMADOS", titulo = "INSPECCIONES PROGRAMADAS", icono = "mdi-calendar-check-outline",
+                        descripcion = "Dónde y cada cuánto se hace cada inspección: en un equipo o en un área (al menos uno). La inspección debe estar publicada (las de esta carga se publican antes).",
                         columnas = new List<Columna> {
-                            C("CHECKLIST", "CHECKLIST", true, "Código o nombre de la pauta.", "EJEMPLO-RONDA", Tipo.Lista, 24, null, "CHECKLISTS EXISTENTES", "PAUTA"),
+                            C("CHECKLIST", "INSPECCION", true, "Código o nombre de la inspección.", "EJEMPLO-RONDA", Tipo.Lista, 24, null, "INSPECCIONES EXISTENTES", "CHECKLIST", "PAUTA"),
                             C("FRECUENCIA", "FRECUENCIA", true, "Nombre de una frecuencia.", "EJEMPLO-LUN-JUE", Tipo.Lista, 26, null, "FRECUENCIAS EXISTENTES"),
                             C("EQUIPO", "EQUIPO", false, "Código o nombre del activo.", "", Tipo.Lista, 18, null, "ACTIVOS", "ACTIVO"),
                             C("AREA", "AREA", false, "Área de la planta (si no es un equipo).", "", Tipo.Lista, 18, null, "AREAS"),
                             C("GRUPO", "GRUPO", false, "Grupo de trabajo.", "", Tipo.Lista, 18, null, "GRUPOS"),
                             C("RESPONSABLE", "RESPONSABLE", false, "Correo de la persona.", "", Tipo.Lista, 28, null, "PERSONAS"),
-                            C("NOMBRE", "NOMBRE", false, "Vacío: «pauta · equipo».", "", Tipo.Texto, 28)
+                            C("NOMBRE", "NOMBRE", false, "Vacío: «inspección · equipo».", "", Tipo.Texto, 28)
                         } },
                     new Hoja { clave = "PLANES", titulo = "PLANES", icono = "mdi-clipboard-text-clock-outline",
                         descripcion = "Una fila por plan de mantenimiento. ACTIVAR = SI publica el plan y genera sus ocurrencias (necesita equipos e intervenciones con frecuencia). Los planes ya activos se actualizan.",

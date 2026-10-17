@@ -217,6 +217,21 @@
                                 <span class="err">Ingresa el nombre de tu empresa.</span>
                             </div>
                             <div class="sg-field2">
+                                <label for="asRubro">Rubro</label>
+                                <select id="asRubro" name="rubro">
+                                    <option value="">Selecciona…</option>
+                                    <option>Minería</option>
+                                    <option>Energía</option>
+                                    <option>Alimentos y bebidas</option>
+                                    <option>Manufactura e industria</option>
+                                    <option>Forestal y celulosa</option>
+                                    <option>Agroindustria</option>
+                                    <option>Retail y logística</option>
+                                    <option>Salud</option>
+                                    <option>Otro</option>
+                                </select>
+                            </div>
+                            <div class="sg-field2">
                                 <label for="asCargo">Cargo</label>
                                 <input type="text" id="asCargo" name="cargo" autocomplete="organization-title" placeholder="Jefe de Mantenimiento" />
                             </div>
@@ -635,7 +650,7 @@
                 fetch('WebService/WsComercial.asmx/CrearLeadPublico', {
                     method: 'POST', headers: { 'Content-Type': 'application/json; charset=utf-8' },
                     body: JSON.stringify({
-                        nombre: nombre, apellido: val('asApellido'), empresa: empresa, cargo: val('asCargo'), correo: correo,
+                        nombre: nombre, apellido: val('asApellido'), empresa: empresa, rubro: val('asRubro'), cargo: val('asCargo'), correo: correo,
                         telefono: val('asTelefono'), pais: val('asPais'), identificador: val('asIdent'), activos: val('asActivos'), plan: val('asPlan'),
                         mensaje: val('asMensaje'), consentimiento: consent, web: val('asWeb')
                     })

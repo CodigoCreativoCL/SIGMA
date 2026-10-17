@@ -599,7 +599,7 @@ public class WsComercial : System.Web.Services.WebService
     /// </summary>
     [WebMethod(EnableSession = false)]
     [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
-    public string CrearLeadPublico(string nombre, string apellido, string empresa, string cargo, string correo, string telefono, string pais, string identificador,
+    public string CrearLeadPublico(string nombre, string apellido, string empresa, string rubro, string cargo, string correo, string telefono, string pais, string identificador,
                                    string activos, string plan, string mensaje, bool consentimiento, string web)
     {
         try
@@ -608,7 +608,7 @@ public class WsComercial : System.Web.Services.WebService
             string contacto = ((nombre ?? "").Trim() + " " + (apellido ?? "").Trim()).Trim();
             string ip = Ip();
             Dictionary<string, object> o = Sp("INS_LEAD_PUBLICO", new[] { "@ID", "@CODIGO" },
-                "@EMPRESA", Corta(empresa, 200), "@CONTACTO", Corta(contacto, 200), "@CARGO", Corta(cargo, 200), "@CORREO", Corta(correo, 200),
+                "@EMPRESA", Corta(empresa, 200), "@CONTACTO", Corta(contacto, 200), "@RUBRO", Corta(rubro, 200), "@CARGO", Corta(cargo, 200), "@CORREO", Corta(correo, 200),
                 "@TELEFONO", Corta(telefono, 50), "@PAIS", Corta(pais, 80), "@IDENTIFICADOR", string.IsNullOrWhiteSpace(identificador) ? null : Corta(identificador, 30), "@N_ACTIVOS", Corta(activos, 40), "@PLAN_INTERES", Corta(plan, 80),
                 "@INTERESES", Corta(plan, 80), "@MENSAJE", Corta(mensaje, 2000), "@CONSENTIMIENTO", consentimiento, "@IP", ip, "@ORIGEN", "FORM_WEB");
             int id = Convert.ToInt32(o["@ID"]);

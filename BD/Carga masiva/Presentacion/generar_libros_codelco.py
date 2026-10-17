@@ -1,11 +1,10 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 """Libros de la demo del miércoles 21-10-2026 — cliente de ejemplo CODELCO, rubro minería (datos inventados).
 
-Se parte de las plantillas oficiales de SIGMA (INVENTARIO.xlsx, ACTIVOS.xlsx, MANTENIMIENTO.xlsx: se descargan desde
-Utilidades › Carga de datos) y se les QUITAN las hojas de ayuda, porque traen los datos de otra empresa. Los libros
-nombran lo que el cliente crea a mano antes de cargar (ver GUIA_Demo_Codelco.md): una planta y cuatro áreas.
+Los libros se arman con las columnas reales del Centro de carga (defs_cm.py las lee de CargaMasivaController.cs), sin hojas
+de ayuda: la empresa es nueva. Nombran lo que el cliente crea a mano antes de cargar (ver GUIA_Demo_Codelco.md): una planta y cuatro áreas.
 
-    python generar_libros_codelco.py [carpeta de las plantillas] [carpeta de salida]
+    python generar_libros_codelco.py [carpeta de salida]
 """
 import datetime as dt
 import os
@@ -16,32 +15,72 @@ import openpyxl
 
 warnings.filterwarnings('ignore')
 AQUI = os.path.dirname(os.path.abspath(__file__))
-PLANTILLAS = sys.argv[1] if len(sys.argv) > 1 else r'C:\Capstone_Archivo\_scratch\plantillas'
-SALIDA = sys.argv[2] if len(sys.argv) > 2 else os.path.join(AQUI, 'Codelco')
+SALIDA = sys.argv[1] if len(sys.argv) > 1 else os.path.join(AQUI, 'Codelco')
 D = dt.date
 PLANTA = 'Concentradora Cerro Alto'
-AYUDAS = {
-    'INVENTARIO': ['PLANTAS', 'BODEGAS EXISTENTES', 'RACKS EXISTENTES', 'UNIDADES', 'TIPOS', 'FABRICANTES', 'ACTIVOS EXISTENTES'],
-    'ACTIVOS': ['PLANTAS', 'AREAS', 'TIPOS ACTIVO', 'ESTADOS', 'CRITICIDADES', 'CENTROS COSTO', 'UNIDADES', 'ACTIVOS EXISTENTES', 'TIPOS COMPONENTE', 'POSICIONES', 'REPUESTOS'],
-    'MANTENIMIENTO': ['PLANTAS', 'AREAS', 'ACTIVOS EXISTENTES', 'TIPOS ACTIVO', 'TIPOS Y MODELOS', 'UNIDADES', 'FRECUENCIAS EXISTENTES', 'TAREAS EXISTENTES',
-                      'CHECKLISTS EXISTENTES', 'PLANES EXISTENTES', 'PERSONAS', 'GRUPOS', 'PRIORIDADES', 'CATEGORIAS TAREA', 'TIPOS ITEM', 'TIPOS OT', 'PRIORIDADES OT'],
+sys.path.insert(0, AQUI)
+import defs_cm  # noqa: E402  (lee las columnas reales del Centro de carga: CargaMasivaController.cs)
+from openpyxl.comments import Comment  # noqa: E402
+from openpyxl.styles import Alignment, Font, PatternFill  # noqa: E402
+
+DEFS = defs_cm.leer()
+LEAME = {
+    'INVENTARIO': ('Inventario', 'Bodegas, racks con sus niveles, repuestos, umbrales y el stock inicial ubicado por PASILLO · RACK · NIVEL · POSICION.',
+                   ['Complete las hojas en orden: BODEGAS, RACKS, REPUESTOS, UMBRALES y STOCK INICIAL.',
+                    'RACKS: cada rack es PASILLO + NUMERO y declara cuántos NIVELES tiene.',
+                    'STOCK INICIAL: PASILLO (A, B…), RACK (el número del rack en ese pasillo), NIVEL (1 = el más bajo), POSICION y FILA ubican el repuesto en su casillero.',
+                    'El TIPO del repuesto es de la empresa: si no existe, se crea con ese nombre.']),
+    'ACTIVOS': ('Activos', 'Equipos con su jerarquía, datos técnicos, componentes, variables, medidores y repuestos compatibles.',
+                ['La planta y las áreas (columna AREA = código del área) tienen que existir: se crean en Cliente › Organización.',
+                 'El TIPO de activo, el modelo y la marca se crean si no existen.',
+                 'Cargue antes el libro de Inventario: la hoja REPUESTOS COMPATIBLES nombra repuestos por su código.']),
+    'MANTENIMIENTO': ('Mantenimiento', 'Frecuencias, tareas, inspecciones con sus campos, planes con sus hitos y actividades, y los equipos de cada plan.',
+                      ['Cargue antes Inventario y Activos: las tareas, inspecciones y planes nombran equipos.',
+                       'Las INSPECCIONES nuevas se publican al terminar si tienen campos en la hoja ITEMS DE INSPECCION.',
+                       'Los PLANES quedan en borrador (ACTIVAR = NO); con SI se publican y generan sus ocurrencias.']),
 }
+MORADO, AZUL = '6732F4', 'EAF4FF'
 
 
-def abrir(nombre):
-    wb = openpyxl.load_workbook(os.path.join(PLANTILLAS, nombre + '.xlsx'))
-    for h in AYUDAS[nombre]:
-        if h in wb.sheetnames:
-            del wb[h]
+def abrir(modulo):
+    """Un libro nuevo con la hoja LEAME y una hoja por cada hoja del módulo, con las columnas reales del Centro de carga (sin hojas de
+    ayuda: la empresa es nueva y no tiene datos propios todavía)."""
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = 'LEAME'
+    nombre, desc, reglas = LEAME[modulo]
+    ws['A1'] = 'SIGMA · Carga de datos · ' + nombre
+    ws['A1'].font = Font(size=16, bold=True, color=MORADO)
+    ws['A2'] = desc
+    r = 4
+    for t in ['1. Una hoja por paso, en el orden en que aparecen. Los encabezados MORADOS son obligatorios; los celestes, opcionales.',
+              '2. Pase el mouse por cada encabezado para ver qué escribir.',
+              '3. Con el mismo código se ACTUALIZA: las celdas vacías conservan lo que había. Volver a cargar no duplica.',
+              '4. Primero REVISE (no escribe nada) y después CARGUE. Una fila con error no detiene la carga.'] + ['5. ' + x if i == 0 else '   ' + x for i, x in enumerate(reglas)]:
+        ws.cell(r, 1, t)
+        r += 1
+    ws.column_dimensions['A'].width = 150
+    for h in DEFS[modulo]:
+        s = wb.create_sheet(h['titulo'])
+        for j, c in enumerate(h['cols'], start=1):
+            cel = s.cell(1, j, c['titulo'])
+            cel.font = Font(bold=True, color='FFFFFF' if c['obl'] else '17223B')
+            cel.fill = PatternFill('solid', fgColor=MORADO if c['obl'] else AZUL)
+            cel.alignment = Alignment(vertical='center', wrap_text=True)
+            cel.comment = Comment(('Obligatoria. ' if c['obl'] else 'Opcional. ') + c['ayuda'] + ((' Ejemplo: ' + c['ejemplo']) if c['ejemplo'] else ''), 'SIGMA')
+            s.column_dimensions[openpyxl.utils.get_column_letter(j)].width = max(12, min(44, len(c['titulo']) + 8))
+        s.freeze_panes = 'A2'
+        s.row_dimensions[1].height = 30
+    wb._modulo = modulo
     return wb
 
 
 def llenar(wb, hoja, filas):
     ws = wb[hoja]
-    for r in range(2, ws.max_row + 1):
-        for c in range(1, ws.max_column + 1):
-            ws.cell(r, c).value = None
+    h = next(x for x in DEFS[wb._modulo] if x['titulo'] == hoja)
+    n = len(h['cols'])
     for i, fila in enumerate(filas, start=2):
+        assert len(fila) <= n, '%s: la fila %d tiene %d celdas y la hoja %d columnas' % (hoja, i, len(fila), n)
         for j, v in enumerate(fila, start=1):
             if v is None or v == '':
                 continue
@@ -54,11 +93,11 @@ def llenar(wb, hoja, filas):
 
 
 def guardar(wb, nombre, nota):
-    ws = wb['LEAME']
-    ws['A2'].value = (ws['A2'].value or '') + ' · ' + nota
+    wb['LEAME']['A2'].value = (wb['LEAME']['A2'].value or '') + ' · ' + nota
     os.makedirs(SALIDA, exist_ok=True)
     wb.save(os.path.join(SALIDA, nombre))
     print('guardado', nombre)
+
 
 
 # ====================================================================== INVENTARIO
@@ -70,9 +109,10 @@ def inventario():
         ['BOD-LUB', 'Bodega de Lubricantes y Reactivos', PLANTA, 'Aceites, grasas y reactivos de flotación, con lote y vencimiento', 'FEFO'],
     ])
     racks = []
-    for bod, pas, n, cap in (('BOD-CEN', 'A', 4, 800), ('BOD-CEN', 'B', 2, 1200), ('BOD-DES', 'A', 3, 5000), ('BOD-LUB', 'A', 3, 2000)):
+    # bodega, pasillo, cuántos racks, carga por nivel (kg), niveles de cada rack
+    for bod, pas, n, cap, niv in (('BOD-CEN', 'A', 4, 800, 4), ('BOD-CEN', 'B', 2, 1200, 3), ('BOD-DES', 'A', 3, 5000, 4), ('BOD-LUB', 'A', 3, 2000, 3)):
         for k in range(1, n + 1):
-            racks.append([bod, 'Pasillo', pas, k, None, None, cap])
+            racks.append([bod, 'Pasillo', pas, k, None, None, cap, niv])
     llenar(wb, 'RACKS', racks)
     # codigo, nombre, unidad, fabricante, modelo, lote, consumible, reparable, costo, vida_h, bodega, largo, ancho, alto, peso
     R = [
@@ -101,7 +141,46 @@ def inventario():
         ('CA-GRA-EP2', 'Grasa EP-2 base litio cartucho 400 g', 'UNIDAD', 'Klüber', 'Centoplex 2 EP', 'SI', 'SI', 'NO', 6900, None, 'BOD-LUB', 5, 5, 25, 0.5),
         ('CA-QUI-XAN', 'Xantato amílico de potasio (tambor 200 kg)', 'KILOGRAMO', 'Qiborax', 'PAX Premium', 'SI', 'SI', 'NO', 2350, None, 'BOD-LUB', 60, 60, 90, 200),
     ]
-    filas = [[c, n, u, f, m, lo, co, re, costo, vida, None, None, None, 'SI', None, None, la, an, al, pe]
+    # tipo de repuesto, vida útil en días y en ciclos, descripción (el tipo lo define la empresa: se crea al cargar)
+    TIPO = {
+        'CA-LIN-SAG': 'Revestimientos', 'CA-LIN-BOL': 'Revestimientos', 'CA-LIN-PULPA': 'Revestimientos',
+        'CA-MAN-CHA': 'Desgaste de chancado', 'CA-CON-CHA': 'Desgaste de chancado', 'CA-BOL-5': 'Medios de molienda',
+        'CA-ROD-23240': 'Rodamientos', 'CA-ROD-22232': 'Rodamientos', 'CA-RODILLO-152': 'Transporte de mineral',
+        'CA-BANDA-ST1600': 'Transporte de mineral', 'CA-POL-TRAC': 'Transporte de mineral',
+        'CA-IMP-PULPA': 'Bombas de pulpa', 'CA-SEL-PULPA': 'Bombas de pulpa', 'CA-MOT-250': 'Motores y variadores', 'CA-VAR-500': 'Motores y variadores',
+        'CA-CON-MV': 'Electricidad de media tensión', 'CA-SEN-VIB': 'Instrumentación', 'CA-SEN-NIV': 'Instrumentación',
+        'CA-VAL-CUC': 'Válvulas y mangueras', 'CA-MAN-HID': 'Válvulas y mangueras',
+        'CA-ACE-HID': 'Lubricantes', 'CA-ACE-ENG': 'Lubricantes', 'CA-GRA-EP2': 'Lubricantes', 'CA-QUI-XAN': 'Reactivos de flotación',
+    }
+    DIAS = {'CA-ACE-HID': 1095, 'CA-ACE-ENG': 1095, 'CA-GRA-EP2': 730, 'CA-QUI-XAN': 365, 'CA-SEL-PULPA': 730, 'CA-MAN-HID': 1460}
+    CICLOS = {'CA-CON-MV': 100000, 'CA-VAL-CUC': 50000}
+    DESC = {
+        'CA-LIN-SAG': 'Placa de acero al cromo-molibdeno que protege la descarga del molino SAG; se cambia por desgaste en la parada mayor.',
+        'CA-LIN-BOL': 'Placa de revestimiento del casco del molino de bolas; se mide su espesor en cada parada.',
+        'CA-MAN-CHA': 'Pieza de desgaste móvil del chancador giratorio primario; se cambia junto con el cóncavo.',
+        'CA-CON-CHA': 'Pieza de desgaste fija del chancador giratorio primario; se cambia por segmentos.',
+        'CA-BOL-5': 'Medio de molienda del molino SAG y del molino de bolas; se repone según el consumo diario.',
+        'CA-ROD-23240': 'Rodamiento del eje principal del chancador; criticidad alta, no hay otro igual en la planta.',
+        'CA-ROD-22232': 'Rodamiento de la polea tractora de la correa y del soplador de flotación.',
+        'CA-RODILLO-152': 'Rodillo de carga de la correa CV-101; se cambia por trabado o desgaste de la carcasa.',
+        'CA-BANDA-ST1600': 'Banda con cables de acero para empalmes y reparaciones de la correa CV-101; se compra y se controla por metro.',
+        'CA-POL-TRAC': 'Polea de accionamiento con enlainado cerámico; se envía a reparar cuando pierde adherencia.',
+        'CA-IMP-PULPA': 'Impulsor de la bomba de pulpa; se puede reparar o reemplazar.',
+        'CA-LIN-PULPA': 'Revestimiento de la carcasa de la bomba de pulpa.',
+        'CA-SEL-PULPA': 'Sello mecánico de la bomba de pulpa; se cambia ante fuga.',
+        'CA-MOT-250': 'Motor de reserva de 250 kW para bombas y correas; se repara en taller externo.',
+        'CA-VAR-500': 'Variador de media tensión de reserva; se repara con el fabricante.',
+        'CA-CON-MV': 'Contactor de media tensión de los tableros de la subestación.',
+        'CA-SEN-VIB': 'Sensor de vibración de las variables de monitoreo de chancador y soplador.',
+        'CA-SEN-NIV': 'Transmisor de nivel de las celdas de flotación y del espesador.',
+        'CA-VAL-CUC': 'Válvula de aislación de las líneas de pulpa.',
+        'CA-MAN-HID': 'Manguera hidráulica de alta presión; se corta a medida.',
+        'CA-ACE-HID': 'Aceite hidráulico para el sistema de ajuste del chancador y las unidades hidráulicas.',
+        'CA-ACE-ENG': 'Aceite para los reductores y el sistema de lubricación del molino SAG; se controla por lote y vencimiento.',
+        'CA-GRA-EP2': 'Grasa de extrema presión para los cojinetes de los molinos.',
+        'CA-QUI-XAN': 'Colector de la flotación de cobre; se controla por lote y vencimiento.',
+    }
+    filas = [[c, n, u, f, m, lo, co, re, costo, vida, DIAS.get(c), CICLOS.get(c), DESC[c], 'SI', TIPO[c], 'FEFO' if lo == 'SI' else 'FIFO', la, an, al, pe]
              for (c, n, u, f, m, lo, co, re, costo, vida, b, la, an, al, pe) in R]
     llenar(wb, 'REPUESTOS', filas)
     # minimo, maximo, reposicion, cantidad inicial, indice de rack
@@ -115,16 +194,22 @@ def inventario():
         'CA-ACE-HID': (400, 2000, 800, 1200, 0), 'CA-ACE-ENG': (400, 2000, 800, 1000, 1), 'CA-GRA-EP2': (24, 120, 48, 72, 2), 'CA-QUI-XAN': (400, 2400, 1200, 1600, 2),
     }
     vence = {'CA-ACE-HID': D(2028, 6, 30), 'CA-ACE-ENG': D(2028, 9, 30), 'CA-GRA-EP2': D(2028, 3, 31), 'CA-QUI-XAN': D(2027, 12, 31)}
-    racks_de = {
-        'BOD-CEN': ['Pasillo A · Rack 01', 'Pasillo A · Rack 02', 'Pasillo A · Rack 03', 'Pasillo A · Rack 04', 'Pasillo B · Rack 01', 'Pasillo B · Rack 02'],
-        'BOD-DES': ['Pasillo A · Rack 01', 'Pasillo A · Rack 02', 'Pasillo A · Rack 03'],
-        'BOD-LUB': ['Pasillo A · Rack 01', 'Pasillo A · Rack 02', 'Pasillo A · Rack 03'],
+    # dónde queda cada repuesto: pasillo, rack (número), nivel (1 = el más bajo), posición, fila
+    UBIC = {
+        'CA-LIN-SAG': ('A', 1, 1, 1), 'CA-LIN-BOL': ('A', 1, 1, 2), 'CA-IMP-PULPA': ('A', 1, 2, 1), 'CA-LIN-PULPA': ('A', 1, 2, 2),
+        'CA-MAN-CHA': ('A', 2, 1, 1), 'CA-CON-CHA': ('A', 2, 1, 2), 'CA-POL-TRAC': ('A', 2, 2, 1),
+        'CA-BOL-5': ('A', 3, 1, 1), 'CA-RODILLO-152': ('A', 3, 2, 1), 'CA-BANDA-ST1600': ('A', 3, 3, 1),
+        'CA-ROD-23240': ('A', 1, 1, 1), 'CA-ROD-22232': ('A', 1, 1, 2), 'CA-SEL-PULPA': ('A', 1, 2, 1),
+        'CA-SEN-VIB': ('A', 2, 1, 1), 'CA-SEN-NIV': ('A', 2, 1, 2), 'CA-CON-MV': ('A', 2, 2, 1),
+        'CA-MAN-HID': ('A', 3, 1, 1), 'CA-VAL-CUC': ('A', 3, 2, 1), 'CA-MOT-250': ('B', 1, 1, 1), 'CA-VAR-500': ('B', 2, 1, 1),
+        'CA-ACE-HID': ('A', 1, 1, 1), 'CA-ACE-ENG': ('A', 1, 1, 2), 'CA-GRA-EP2': ('A', 2, 1, 1), 'CA-QUI-XAN': ('A', 3, 1, 1),
     }
     umbr, stock = [], []
     for (c, n, u, f, m, lo, co, re, costo, vida, bod, la, an, al, pe) in R:
-        mn, mx, rp, cant, ri = Q[c]
-        umbr.append([c, bod, mn, mx, rp, None])
-        stock.append([c, bod, racks_de[bod][ri], cant, costo, ('LOTE-2026-' + c[-3:]) if c in vence else None, vence.get(c), 'Stock inicial al implementar SIGMA'])
+        mn, mx, rp, cant, _ = Q[c]
+        umbr.append([c, bod, mn, mx, rp, 'Mínimo = consumo de un mes; reposición con el proveedor habitual'])
+        pas, rk, niv, pos = UBIC[c]
+        stock.append([c, bod, pas, rk, niv, pos, 0, cant, costo, ('LOTE-2026-' + c[-3:]) if c in vence else None, vence.get(c), 'Stock inicial al implementar SIGMA'])
     llenar(wb, 'UMBRALES', umbr)
     llenar(wb, 'STOCK INICIAL', stock)
     llenar(wb, 'COMPATIBILIDADES', [])
@@ -277,7 +362,7 @@ def mantenimiento():
         ['CA-T03', 'CA Mensual día 5', None, None], ['CA-T04', 'CA Semanal lunes y jueves', None, None],
         ['CA-T05', 'CA Cada 3 meses', None, None], ['CA-T06', 'CA Cada 15 días', None, None],
     ])
-    llenar(wb, 'CHECKLISTS', [
+    llenar(wb, 'INSPECCIONES', [
         ['CA-CHK-CHA', 'Ronda de inspección del chancado primario', 'Ronda por turno del chancador, el alimentador y la correa CV-101.', PLANTA, 'Chancador', 'SI'],
         ['CA-CHK-MOL', 'Ronda de molienda y flotación', 'Ronda por turno del molino SAG, la bomba de pulpa y las celdas de flotación.', PLANTA, None, 'SI'],
     ])
@@ -296,11 +381,16 @@ def mantenimiento():
         ('CA-CHK-MOL', 'Flotación', '¿La espuma tiene el aspecto normal?', 'Sí / No', None),
         ('CA-CHK-MOL', 'Flotación', 'Foto de la superficie de la celda', 'Fotografía', None),
     ]
-    llenar(wb, 'CHECKLIST ITEMS', [[c, s, None, tx, tp, None, 'SI', 'SI', 'SI' if tp == 'Fotografía' else 'NO', u] for (c, s, tx, tp, u) in I])
-    llenar(wb, 'CHECKLISTS PROGRAMADOS', [
-        ['CA-CHK-CHA', 'CA Diaria (todos los días)', 'CA-CHA-01', None, None, None, None],
-        ['CA-CHK-MOL', 'CA Diaria (todos los días)', 'CA-SAG-01', None, None, None, None],
-        ['CA-CHK-MOL', 'CA Diaria (todos los días)', 'CA-FLO-R1', None, None, None, None],
+    orden = {}
+    items = []
+    for (c, s, tx, tp, u) in I:
+        orden[c] = orden.get(c, 0) + 1
+        items.append([c, s, '%s-%02d' % (c[-3:], orden[c]), tx, tp, orden[c], 'SI', 'SI', 'SI' if tp == 'Fotografía' else 'NO', u])
+    llenar(wb, 'ITEMS DE INSPECCION', items)
+    llenar(wb, 'INSPECCIONES PROGRAMADAS', [
+        ['CA-CHK-CHA', 'CA Diaria (todos los días)', 'CA-CHA-01', None, None, None, 'Ronda diaria del chancador primario'],
+        ['CA-CHK-MOL', 'CA Diaria (todos los días)', 'CA-SAG-01', None, None, None, 'Ronda diaria del molino SAG'],
+        ['CA-CHK-MOL', 'CA Diaria (todos los días)', 'CA-FLO-R1', None, None, None, 'Ronda diaria de la celda rougher'],
     ])
     llenar(wb, 'PLANES', [
         ['CA-PM-SAG', 'Plan preventivo del molino SAG', 'Lubricación quincenal, inspección mensual y revisión mayor semestral del molino SAG.', PLANTA, None, 'Molino', None, 'NO'],
